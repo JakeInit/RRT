@@ -29,11 +29,15 @@ int main(int argc, char** argv) {
   signal(SIGINT, mainspace::signalHandler);
 
   rrt::system::timerEvent timer;
-  const float loopTime_ms = 1000;
+  const float loopTime_ms = 100;
 
   qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", ROBOTRADIUS);
   qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", ROBOTRADIUS);
 
+  std::cout << "Linear distance between start and end = " << rrt::rapidRandomTree::distance(qInit->getTreeStart(),
+                                                                                    qGoal->getTreeStart()) << std::endl;
+
+  double startTime = rrt::system::timerEvent::getRunTime_ms();
   std::cout << "Entering the Running Loop" << std::endl;
   while(running) {
     if(timer.timerDone()) {
@@ -43,6 +47,16 @@ int main(int argc, char** argv) {
       continue;
     }
 
+    // Grow the trees until they connect
+    rrt::vector2f1 newStartTreePoint = qInit->growTreeTowardsRandom();
+    qGoal->growTreeTowardsPoint(newStartTreePoint);
+    if(qGoal->goalReached()) {
+      running = false;
+      std::cout << "Trees are connected. Path from start to goal is possible" << std::endl;
+      double endTime = rrt::system::timerEvent::getRunTime_ms();
+      std::cout << "Time to find solution = " << endTime - startTime << "ms" << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    }
   }
 
   shutdown();

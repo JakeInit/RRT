@@ -289,4 +289,15 @@ bool rapidRandomTree::collisionDetection(const vector2f1& point) {
   return false;
 }
 
+vector2f1 rapidRandomTree::getTreeStart() {
+  if(tree.empty()) {
+    std::cout << "Tree for " << treeName << " is empty." << std::endl;
+    vector2f1 emptyVector;
+    emptyVector.setZero();
+    return emptyVector;
+  }
+
+  return tree.begin()->location_m;
+}
+
 } // end namespace rrt

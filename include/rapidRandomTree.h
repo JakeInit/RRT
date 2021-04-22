@@ -50,6 +50,7 @@ public:
   vector2f1 findPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom);
   static float get_random(float lowerBound, float upperBound);
   static float distance(vector2f1 p1, vector2f1 p2);
+  vector2f1 getTreeStart();
 
 private:
   node createNode(vector2f1 newPt);
