@@ -18,8 +18,7 @@
 namespace rrt {
 
 node::node() {
-  coordinate.x_m = 0;
-  coordinate.y_m = 0;
+  location_m.setZero();
   id = 0;
   neighbors.clear();
 }
@@ -27,14 +26,16 @@ node::node() {
 // Constructor
 rapidRandomTree::rapidRandomTree(const std::string& treeName_) {
   treeName = treeName_;
-  float x_m = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
-  float y_m = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
+  vector2f1 startPt;
+  startPt.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
+  startPt.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
   std::cout << "Creating new tree " << treeName << " at point {x, y} = {" <<
-    x_m << ", " << y_m << "}" << std::endl;
+    startPt.x() << ", " << startPt.y() << "}" << std::endl;
 
   tree.clear();
-  tree.emplace_back(createNode(x_m, y_m));
+  tree.emplace_back(createNode(startPt));
   treeIsValid = true;
+  reachedGoalPoint = false;
 }
 
 // De-Constructor
@@ -42,33 +43,50 @@ rapidRandomTree::~rapidRandomTree() {
   std::cout << "De-constructing tree " << treeName << std::endl;
 }
 
-std::pair<float, float> rapidRandomTree::growTreeTowardsRandom() {
+vector2f1 rapidRandomTree::growTreeTowardsRandom() {
   // Create a random point
-  float x_m = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
-  float y_m = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
+  vector2f1 randomPoint, newPoint;
+  randomPoint.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
+  randomPoint.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
 
   // Find closest neighbor
-  auto neighbor = findClosestNeighbor(x_m, y_m);
+  auto neighbor = findClosestNeighbor(randomPoint);
 
   // Grow tree from closest neighbor towards random point by distance epsilon
+  newPoint = findPointOnLine(tree.at(neighbor).location_m, randomPoint, true);
+
+  // TODO: Check collision detector
+
   // Add new point to tree
+  tree.emplace_back(createNode(newPoint));
+
   // returns xy-coordinates of new point
-  return {};
+  return newPoint;
 }
 
-void rapidRandomTree::growTreeTowardsPoint(float x_m, float y_m) {
+void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
+  vector2f1 newPoint;
+  // Find closest neighbor
+  auto neighbor = findClosestNeighbor(setPt);
 
+  // Grow tree from closest neighbor towards point by distance epsilon
+  newPoint = findPointOnLine(tree.at(neighbor).location_m, setPt, false);
+
+  // TODO: Check collision detector
+
+  // Add new point to tree
+  tree.emplace_back(createNode(newPoint));
 }
 
-node rapidRandomTree::createNode(float x_m, float y_m) {
+node rapidRandomTree::createNode(vector2f1 newPt) {
   node newNode;
-  newNode.coordinate.x_m = x_m;
-  newNode.coordinate.y_m = y_m;
+  newNode.location_m.x() = newPt.x();
+  newNode.location_m.y() = newPt.y();
   newNode.id = (uint64_t) tree.size();
   return newNode;
 }
 
-uint64_t rapidRandomTree::findClosestNeighbor(float x_m, float y_m) {
+uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
   if(tree.empty()) {
     std::cout << "Tree is empty. This value is invalid" << std::endl;
     treeIsValid = false;
@@ -81,16 +99,99 @@ uint64_t rapidRandomTree::findClosestNeighbor(float x_m, float y_m) {
 
   std::vector<float> distances;
   for(const auto& it : tree) {
-    distances.emplace_back(distance(it.coordinate.x_m, x_m, it.coordinate.y_m, y_m));
+    distances.emplace_back(distance(it.location_m, randomPt));
   }
 
   auto it = std::min_element(distances.begin(), distances.end());
   return std::distance(distances.begin(), it);
 }
 
-float rapidRandomTree::distance(float x1_m, float y1_m, float x2_m, float y2_m) {
-  float dx = x1_m - x2_m;
-  float dy = y1_m - y2_m;
+vector2f1 rapidRandomTree::findPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom) {
+  vector2f1 newPoint;
+  float x;
+  float y;
+
+  // MAG of line segment from start to end
+  float dy = endPt.y()-startPt.y();
+  float dx = endPt.x()-startPt.x();
+  if(dx == 0.f) {                         // Means we are on a vertical line
+    x = endPt.x();
+    if(dy > 0) {
+      y = startPt.y() + EPSILON;
+      if(y > endPt.y()) {                 // Do not want to set new point past endpoint
+        y = endPt.y();
+        reachedGoalPoint = !toRandom;
+      }
+    } else {
+      y = startPt.y() - EPSILON;
+      if(y < endPt.y()) {                 // Do not want to set new point past endpoint
+        y = endPt.y();
+        reachedGoalPoint = !toRandom;
+      }
+    }
+    newPoint.x() = x;
+    newPoint.y() = y;
+    return newPoint;
+  } else if(dy == 0.f) {                  // Means we are on a horizontal line
+    y = endPt.y();
+    if(dx > 0) {
+      x = startPt[0] + EPSILON;
+      if(x > endPt.x()) {                 // Do not want to set new point past endpoint
+        x = endPt.x();
+        reachedGoalPoint = !toRandom;
+      }
+    } else {
+      x = startPt.x() - EPSILON;
+      if(x < endPt.x()) {                 // Do not want to set new point past endpoint
+        x = endPt.x();
+        reachedGoalPoint = !toRandom;
+      }
+    }
+    newPoint.x() = x;
+    newPoint.y() = y;
+    return newPoint;
+  }
+
+  float MAG = distance(startPt, endPt);
+  float SLOPE = dy/dx;
+
+  // determine if epsilon goes past Goal point
+  double distanceFromEnd = MAG - EPSILON;
+  if(distanceFromEnd > 0) {               // goal point not past end point
+    double b = startPt[1] - SLOPE*startPt[0];
+    // Use dist formula with goal.Y subbed in to get goal.X
+    double c = b - startPt[1];
+    double A = pow(SLOPE,2) + 1;
+    double B = 2*c*SLOPE - 2*startPt[0];
+    double C = pow(c,2) + pow(startPt[0],2) - pow(EPSILON,2);
+    // determine points based on quadratic formula
+    double Xg1 = (-B + sqrt(pow(B,2) - 4*A*C))/(2*A);
+    double Xg2 = (-B - sqrt(pow(B,2) - 4*A*C))/(2*A);
+    double Yg1 = SLOPE*Xg1 + b;
+    double Yg2 = SLOPE*Xg2 + b;
+    vector2f1 point1 = {Xg1, Yg1};
+    vector2f1 point2 = {Xg2, Yg2};
+    double goalToEnd1 = sqrt(pow((endPt[0]-point1[0]),2) +
+        pow((endPt[1]-point1[1]),2));
+    double goalToEnd2 = sqrt(pow((endPt[0]-point2[0]),2) +
+        pow((endPt[1]-point2[1]),2));
+
+    if(goalToEnd1 < goalToEnd2) {
+      newPoint = point1;
+    } else {
+      newPoint = point2;
+    }
+  } else {                                // make end point the goal point
+    newPoint = endPt;
+    reachedGoalPoint = !toRandom;
+  }
+
+  return newPoint;
+}
+
+float rapidRandomTree::distance(vector2f1 p1, vector2f1 p2) {
+  float dx = p1.x() - p2.x();
+  float dy = p1.y() - p2.y();
   auto distance = (float) sqrt(pow(dx, 2) + pow(dy, 2));
   return distance;
 }
