@@ -18,18 +18,20 @@
 #include "timerEvent.h"
 #include "main.h"
 
-#define ROBOTRADIUS 0.50
+#define ROBOTRADIUS 1.0
+#define ATTEMPTS    500
 
 using namespace mainspace;
 std::unique_ptr<rrt::rapidRandomTree> qInit = nullptr;
 std::unique_ptr<rrt::rapidRandomTree> qGoal = nullptr;
+uint16_t counter = 0;
 
 int main(int argc, char** argv) {
   running = true;
   signal(SIGINT, mainspace::signalHandler);
 
   rrt::system::timerEvent timer;
-  const float loopTime_ms = 100;
+  const float loopTime_ms = 10;
 
   qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", ROBOTRADIUS);
   qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", ROBOTRADIUS);
@@ -48,11 +50,24 @@ int main(int argc, char** argv) {
     }
 
     // Grow the trees until they connect
+    std::cout << "test 1" << std::endl;
     rrt::vector2f1 newStartTreePoint = qInit->growTreeTowardsRandom();
+    std::cout << "test 2" << std::endl;
     qGoal->growTreeTowardsPoint(newStartTreePoint);
     if(qGoal->goalReached()) {
       running = false;
       std::cout << "Trees are connected. Path from start to goal is possible" << std::endl;
+      double endTime = rrt::system::timerEvent::getRunTime_ms();
+      std::cout << "Time to find solution = " << endTime - startTime << "ms" << std::endl;
+      std::cout << "Number of attempts to grow trees = " << counter << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    } else {
+      counter++;
+    }
+
+    if(counter >= ATTEMPTS) {
+      running = false;
+      std::cout << "No viable path found in " << ATTEMPTS << " to grow trees." << std::endl;
       double endTime = rrt::system::timerEvent::getRunTime_ms();
       std::cout << "Time to find solution = " << endTime - startTime << "ms" << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(2000));

@@ -46,10 +46,14 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
   treeName = treeName_;
   robotRadius = robotRadius_;
   setUpRobotModel();
-//  setUpObjects();
+  setUpObjects();
   vector2f1 startPt;
-  startPt.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
-  startPt.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
+  bool collision = true;
+  while(collision) {
+    startPt.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
+    startPt.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
+    collision = collisionDetection(startPt);
+  }
   std::cout << "Creating new tree " << treeName << " at point {x, y} = {" <<
     startPt.x() << ", " << startPt.y() << "}" << std::endl;
 
@@ -79,6 +83,7 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
       // Check collision detector of random point
       randomPointCollison = collisionDetection(randomPoint);
     }
+    std::cout << "Test 4" << std::endl;
 
     // Find closest neighbor
     auto neighbor = findClosestNeighbor(randomPoint);
@@ -244,7 +249,7 @@ float rapidRandomTree::get_random(float lowerBound, float upperBound) {
 }
 
 void rapidRandomTree::setUpRobotModel() {
-  robotModel = std::make_unique<Boxf>(1.0, 1.0, 0);
+  robotModel = std::make_unique<Boxf>(robotRadius, robotRadius, 0);
 }
 
 void rapidRandomTree::setUpObjects() {
@@ -268,22 +273,30 @@ void rapidRandomTree::setUpObjects() {
 }
 
 bool rapidRandomTree::collisionDetection(const vector2f1& point) {
+  if(objects.empty()) {
+    return false;
+  }
+
   Transform3f tfRobot;
   tfRobot.setIdentity();
   tfRobot.translation().x() = point.x();  // This places the robot at the point inserted
   tfRobot.translation().y() = point.y();  // This will tell if point is even viable for the robot to exist at
   tfRobot.translation().z() = 0;
-  tfRobot.rotation().eulerAngles(0, 1, 2).x() = 0;
-  tfRobot.rotation().eulerAngles(0, 1, 2).y() = 0;
-  tfRobot.rotation().eulerAngles(0, 1, 2).z() = 0;
+//  tfRobot.rotation().eulerAngles(0, 1, 2).x() = 0;
+//  tfRobot.rotation().eulerAngles(0, 1, 2).y() = 0;
+//  tfRobot.rotation().eulerAngles(0, 1, 2).z() = 0;
 
   CollisionRequestf request;
   CollisionResultf result;
+  int counter = 1;
   for(auto it : objects) {
     collide(robotModel.get(), tfRobot, &it.first, it.second, request, result);
     if(result.isCollision()) {
+      std::cout << std::endl << "Collision with object " << counter << std::endl;
+      std::cout << "Number of contacts = " << result.numContacts() << std::endl;
       return true;                        // Point is not viable if collision is detected with any object
     }
+    counter++;
   }
 
   return false;
