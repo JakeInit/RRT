@@ -11,11 +11,27 @@
 #include <cmath>
 #include <random>
 
+// fcl includes
+#include "fcl/math/detail/project.h"
+#include "fcl/narrowphase/collision.h"
+#include "fcl/geometry/bvh/BVH_model.h"
+#include "fcl/math/sampler/sampler_r.h"
+#include "fcl/math/sampler/sampler_se2.h"
+#include "fcl/math/sampler/sampler_se2_disk.h"
+#include "fcl/math/sampler/sampler_se3_euler.h"
+#include "fcl/math/sampler/sampler_se3_euler_ball.h"
+#include "fcl/math/sampler/sampler_se3_quat.h"
+#include "fcl/math/sampler/sampler_se3_quat_ball.h"
+#include "fcl/math/geometry.h"
+
 // local include
 #include "rapidRandomTree.h"
 #include "timerEvent.h"
 
 namespace rrt {
+
+using namespace fcl;
+typedef BVHModel<OBBRSSf> Model;
 
 node::node() {
   location_m.setZero();
@@ -26,6 +42,9 @@ node::node() {
 // Constructor
 rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_) {
   treeName = treeName_;
+  robotRadius = robotRadius_;
+  setUpRobotModel();
+  setUpObjects();
   vector2f1 startPt;
   startPt.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
   startPt.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
@@ -44,18 +63,30 @@ rapidRandomTree::~rapidRandomTree() {
 }
 
 vector2f1 rapidRandomTree::growTreeTowardsRandom() {
-  // Create a random point
   vector2f1 randomPoint, newPoint;
-  randomPoint.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
-  randomPoint.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
+  bool randomPointCollison = true;
+  bool robotoCollision = true;
 
-  // Find closest neighbor
-  auto neighbor = findClosestNeighbor(randomPoint);
+  while(robotoCollision) {
+    // Find new point until random point does not collide
+    while (randomPointCollison) {
+      // Create a random point
+      randomPoint.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
+      randomPoint.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
 
-  // Grow tree from closest neighbor towards random point by distance epsilon
-  newPoint = findPointOnLine(tree.at(neighbor).location_m, randomPoint, true);
+      // Check collision detector of random point
+      randomPointCollison = collisionDetection(randomPoint);
+    }
 
-  // TODO: Check collision detector
+    // Find closest neighbor
+    auto neighbor = findClosestNeighbor(randomPoint);
+
+    // Grow tree from closest neighbor towards random point by distance epsilon
+    newPoint = findPointOnLine(tree.at(neighbor).location_m, randomPoint, true);
+
+    // Check collision detector of new point
+    robotoCollision = collisionDetection(newPoint);
+  }
 
   // Add new point to tree
   tree.emplace_back(createNode(newPoint));
@@ -66,13 +97,17 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
 
 void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   vector2f1 newPoint;
+
   // Find closest neighbor
   auto neighbor = findClosestNeighbor(setPt);
 
   // Grow tree from closest neighbor towards point by distance epsilon
   newPoint = findPointOnLine(tree.at(neighbor).location_m, setPt, false);
 
-  // TODO: Check collision detector
+  // Check collision detector
+  if(collisionDetection(newPoint)) {
+    return;                               // return without adding new point to tree
+  }
 
   // Add new point to tree
   tree.emplace_back(createNode(newPoint));
@@ -204,6 +239,61 @@ float rapidRandomTree::get_random(float lowerBound, float upperBound) {
   auto randomValue = (float) dis(e);
 //  std::cout << "random value = " << randomValue << std::endl;
   return randomValue;
+}
+
+void rapidRandomTree::setUpRobotModel() {
+  // set mesh triangles and vertice indices
+  std::vector<Vector3f> vertices;
+  std::vector<Triangle> triangles;
+  // code to set the vertices and triangles
+  Triangle robot;
+  robot.set(1, 1, 1);
+
+  // BVHModel is a template class for mesh geometry, for default OBBRSS template
+  // is used
+  std::shared_ptr<Model> geom = std::make_shared<Model>();
+  // add the mesh data into the BVHModel structure
+  geom->beginModel();
+  geom->addSubModel(vertices, triangles);
+  geom->endModel();
+
+  // R and T are the rotation matrix and translation vector
+  Matrix3f R;
+  Vector3f T;
+
+  // code for setting R and T goes below this line
+
+  // transform is configured according to R and T
+  Transform3f pose = Transform3f::Identity();
+  pose.linear() = R;
+  pose.translation() = T;
+
+  //geom and tf are the geometry and the transform of the object
+//  std::shared_ptr<BVHModel<OBBRSSf>> geom = ...
+//  Transform3f tf = ...
+//
+//  //Combine them together
+//  CollisionObjectf* obj = new CollisionObjectf(geom, tf);
+}
+
+void rapidRandomTree::setUpObjects() {
+
+}
+
+bool rapidRandomTree::collisionDetection(const vector2f1& point) {
+  // Given two objects o1 and o2
+//  CollisionObjectf* o1 = ...
+//  CollisionObjectf* o2 = ...
+
+  // set the collision request structure, here we just use the default setting
+//  CollisionRequest request;
+
+  // result will be returned via the collision result structure
+//  CollisionResult result;
+
+  // perform collision test
+//  collide(o1, o2, request, result);
+  return false;
 }
 
 } // end namespace rrt

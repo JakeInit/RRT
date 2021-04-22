@@ -57,8 +57,8 @@ link_directories(${PROJECT_SOURCE_DIR}/lib)
 add_library(localRRT STATIC ${PROJECT_SRC})
 target_compile_definitions(localRRT PRIVATE _TURN_OFF_PLATFORM_STRING)
 target_compile_definitions(localRRT PRIVATE PROJECTDIR="${PROJECT_SOURCE_DIR}/")
-target_link_libraries(localRRT -lm boost_system boost_filesystem boost_thread boost_locale boost_date_time jsoncpp)
-set(LINK_LIBRARIES localRRT pthread ncurses glib-2.0 gobject-2.0 vips-cpp vipsCC vips)
+target_link_libraries(localRRT -lm boost_system boost_filesystem boost_thread boost_locale boost_date_time jsoncpp fcl)
+set(LINK_LIBRARIES localRRT pthread)
 
 #----------------------------------------------------------------------
 #----Check if running in windows environment---------------------------

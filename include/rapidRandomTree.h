@@ -54,6 +54,10 @@ public:
 private:
   node createNode(vector2f1 newPt);
   uint64_t findClosestNeighbor(const vector2f1& randomPt);
+  void setUpRobotModel();
+  void setUpObjects();
+  bool collisionDetection(const vector2f1& point);
+
   std::string treeName;
   std::vector<node> tree;
   float robotRadius;
