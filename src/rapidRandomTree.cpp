@@ -24,7 +24,7 @@ node::node() {
 }
 
 // Constructor
-rapidRandomTree::rapidRandomTree(const std::string& treeName_) {
+rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_) {
   treeName = treeName_;
   vector2f1 startPt;
   startPt.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);

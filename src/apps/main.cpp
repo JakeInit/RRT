@@ -18,6 +18,8 @@
 #include "timerEvent.h"
 #include "main.h"
 
+#define ROBOTRADIUS 0.50
+
 using namespace mainspace;
 std::unique_ptr<rrt::rapidRandomTree> qInit = nullptr;
 std::unique_ptr<rrt::rapidRandomTree> qGoal = nullptr;
@@ -29,8 +31,8 @@ int main(int argc, char** argv) {
   rrt::system::timerEvent timer;
   const float loopTime_ms = 1000;
 
-  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint");
-  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint");
+  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", ROBOTRADIUS);
+  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", ROBOTRADIUS);
 
   std::cout << "Entering the Running Loop" << std::endl;
   while(running) {

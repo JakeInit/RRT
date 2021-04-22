@@ -29,7 +29,7 @@ struct node {
 class rapidRandomTree {
 public:
   // Constructor
-  rapidRandomTree(const std::string& treeName_);
+  rapidRandomTree(const std::string& treeName_, float robotRadius_);
   // Deconstructor
   ~rapidRandomTree();
 
@@ -56,6 +56,7 @@ private:
   uint64_t findClosestNeighbor(const vector2f1& randomPt);
   std::string treeName;
   std::vector<node> tree;
+  float robotRadius;
   bool treeIsValid;
   bool reachedGoalPoint;
 };
