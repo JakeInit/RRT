@@ -12,16 +12,16 @@
 #include <random>
 
 // fcl includes
-#include "fcl/math/detail/project.h"
+//#include "fcl/math/detail/project.h"
+//#include "fcl/geometry/bvh/BVH_model.h"
+//#include "fcl/math/sampler/sampler_r.h"
+//#include "fcl/math/sampler/sampler_se2.h"
+//#include "fcl/math/sampler/sampler_se2_disk.h"
+//#include "fcl/math/sampler/sampler_se3_euler.h"
+//#include "fcl/math/sampler/sampler_se3_euler_ball.h"
+//#include "fcl/math/sampler/sampler_se3_quat.h"
+//#include "fcl/math/sampler/sampler_se3_quat_ball.h"
 #include "fcl/narrowphase/collision.h"
-#include "fcl/geometry/bvh/BVH_model.h"
-#include "fcl/math/sampler/sampler_r.h"
-#include "fcl/math/sampler/sampler_se2.h"
-#include "fcl/math/sampler/sampler_se2_disk.h"
-#include "fcl/math/sampler/sampler_se3_euler.h"
-#include "fcl/math/sampler/sampler_se3_euler_ball.h"
-#include "fcl/math/sampler/sampler_se3_quat.h"
-#include "fcl/math/sampler/sampler_se3_quat_ball.h"
 #include "fcl/math/geometry.h"
 
 // local include
@@ -31,7 +31,6 @@
 namespace rrt {
 
 using namespace fcl;
-typedef BVHModel<OBBRSSf> Model;
 
 node::node() {
   location_m.setZero();
@@ -39,12 +38,15 @@ node::node() {
   neighbors.clear();
 }
 
+std::unique_ptr<Boxf> robotModel;
+std::vector<std::pair<Boxf, Transform3f>> objects;
+
 // Constructor
 rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_) {
   treeName = treeName_;
   robotRadius = robotRadius_;
   setUpRobotModel();
-  setUpObjects();
+//  setUpObjects();
   vector2f1 startPt;
   startPt.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
   startPt.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
@@ -242,57 +244,48 @@ float rapidRandomTree::get_random(float lowerBound, float upperBound) {
 }
 
 void rapidRandomTree::setUpRobotModel() {
-  // set mesh triangles and vertice indices
-  std::vector<Vector3f> vertices;
-  std::vector<Triangle> triangles;
-  // code to set the vertices and triangles
-  Triangle robot;
-  robot.set(1, 1, 1);
-
-  // BVHModel is a template class for mesh geometry, for default OBBRSS template
-  // is used
-  std::shared_ptr<Model> geom = std::make_shared<Model>();
-  // add the mesh data into the BVHModel structure
-  geom->beginModel();
-  geom->addSubModel(vertices, triangles);
-  geom->endModel();
-
-  // R and T are the rotation matrix and translation vector
-  Matrix3f R;
-  Vector3f T;
-
-  // code for setting R and T goes below this line
-
-  // transform is configured according to R and T
-  Transform3f pose = Transform3f::Identity();
-  pose.linear() = R;
-  pose.translation() = T;
-
-  //geom and tf are the geometry and the transform of the object
-//  std::shared_ptr<BVHModel<OBBRSSf>> geom = ...
-//  Transform3f tf = ...
-//
-//  //Combine them together
-//  CollisionObjectf* obj = new CollisionObjectf(geom, tf);
+  robotModel = std::make_unique<Boxf>(1.0, 1.0, 0);
 }
 
 void rapidRandomTree::setUpObjects() {
+  std::pair<Boxf, Transform3f> object;
+  Transform3f tf;
 
+  tf.translation().x() = 4.875;
+  tf.translation().y() = 4.875;
+  object = {Boxf(0.25, 0.25, 0), tf};
+  objects.emplace_back(object);
+
+  tf.translation().x() = 0.000;
+  tf.translation().y() = 3.000;
+  object = {Boxf(0.50, 0.50, 0), tf};
+  objects.emplace_back(object);
+
+  tf.translation().x() = -2.550;
+  tf.translation().y() = -3.000;
+  object = {Boxf(0.50, 0.50, 0), tf};
+  objects.emplace_back(object);
 }
 
 bool rapidRandomTree::collisionDetection(const vector2f1& point) {
-  // Given two objects o1 and o2
-//  CollisionObjectf* o1 = ...
-//  CollisionObjectf* o2 = ...
+  Transform3f tfRobot;
+  tfRobot.setIdentity();
+  tfRobot.translation().x() = point.x();  // This places the robot at the point inserted
+  tfRobot.translation().y() = point.y();  // This will tell if point is even viable for the robot to exist at
+  tfRobot.translation().z() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).x() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).y() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).z() = 0;
 
-  // set the collision request structure, here we just use the default setting
-//  CollisionRequest request;
+  CollisionRequestf request;
+  CollisionResultf result;
+  for(auto it : objects) {
+    collide(robotModel.get(), tfRobot, &it.first, it.second, request, result);
+    if(result.isCollision()) {
+      return true;                        // Point is not viable if collision is detected with any object
+    }
+  }
 
-  // result will be returned via the collision result structure
-//  CollisionResult result;
-
-  // perform collision test
-//  collide(o1, o2, request, result);
   return false;
 }
 

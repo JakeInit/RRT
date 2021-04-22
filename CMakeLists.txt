@@ -32,6 +32,7 @@ message(STATUS "Project Source Directory = " ${PROJECT_SOURCE_DIR})
 find_package (Eigen3 REQUIRED NO_MODULE)
 find_package(Threads)
 find_package(Boost REQUIRED system filesystem thread locale date_time)
+find_package(fcl REQUIRED)
 
 #----------------------------------------------------------------------
 #----Include Directories-----------------------------------------------
@@ -45,6 +46,7 @@ include_directories(${EIGEN3_INCLUDE_DIR})
 
 message(STATUS "eigen3 directory = " ${EIGEN3_INCLUDE_DIR})
 message(STATUS "Boost directory = " ${Boost_INCLUDE_DIRS})
+message(STATUS "FCL directory = " ${FCL_INCLUDE_DIR})
 
 #----------------------------------------------------------------------
 #------Link Libraries--------------------------------------------------
@@ -57,7 +59,7 @@ link_directories(${PROJECT_SOURCE_DIR}/lib)
 add_library(localRRT STATIC ${PROJECT_SRC})
 target_compile_definitions(localRRT PRIVATE _TURN_OFF_PLATFORM_STRING)
 target_compile_definitions(localRRT PRIVATE PROJECTDIR="${PROJECT_SOURCE_DIR}/")
-target_link_libraries(localRRT -lm boost_system boost_filesystem boost_thread boost_locale boost_date_time jsoncpp fcl)
+target_link_libraries(localRRT -lm boost_system boost_filesystem boost_thread boost_locale boost_date_time jsoncpp ccd fcl)
 set(LINK_LIBRARIES localRRT pthread)
 
 #----------------------------------------------------------------------
