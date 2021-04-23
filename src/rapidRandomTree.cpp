@@ -38,8 +38,8 @@ node::node() {
   neighbors.clear();
 }
 
-std::unique_ptr<Boxf> robotModel;
-std::vector<std::pair<Boxf, Transform3f>> objects;
+std::shared_ptr<Boxf> robotModel;
+std::vector<std::pair<std::shared_ptr<Boxf>, Transform3f>> objects;
 
 // Constructor
 rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_) {
@@ -70,11 +70,12 @@ rapidRandomTree::~rapidRandomTree() {
 
 vector2f1 rapidRandomTree::growTreeTowardsRandom() {
   vector2f1 randomPoint, newPoint;
-  bool randomPointCollison = true;
+  bool randomPointCollison;
   bool robotoCollision = true;
 
   while(robotoCollision) {
     // Find new point until random point does not collide
+    randomPointCollison = true;
     while (randomPointCollison) {
       // Create a random point
       randomPoint.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
@@ -83,7 +84,6 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
       // Check collision detector of random point
       randomPointCollison = collisionDetection(randomPoint);
     }
-    std::cout << "Test 4" << std::endl;
 
     // Find closest neighbor
     auto neighbor = findClosestNeighbor(randomPoint);
@@ -253,22 +253,25 @@ void rapidRandomTree::setUpRobotModel() {
 }
 
 void rapidRandomTree::setUpObjects() {
-  std::pair<Boxf, Transform3f> object;
+  std::pair<std::shared_ptr<Boxf>, Transform3f> object;
   Transform3f tf;
 
   tf.translation().x() = 4.875;
   tf.translation().y() = 4.875;
-  object = {Boxf(0.25, 0.25, 0), tf};
+  std::shared_ptr<Boxf> object1(new Boxf(0.25, 0.25, 0));
+  object = {object1, tf};
   objects.emplace_back(object);
 
   tf.translation().x() = 0.000;
   tf.translation().y() = 3.000;
-  object = {Boxf(0.50, 0.50, 0), tf};
+  std::shared_ptr<Boxf> object2(new Boxf(0.50, 0.50, 0));
+  object = {object2, tf};
   objects.emplace_back(object);
 
   tf.translation().x() = -2.550;
   tf.translation().y() = -3.000;
-  object = {Boxf(0.50, 0.50, 0), tf};
+  std::shared_ptr<Boxf> object3(new Boxf(0.50, 0.50, 0));
+  object = {object3, tf};
   objects.emplace_back(object);
 }
 
@@ -278,25 +281,26 @@ bool rapidRandomTree::collisionDetection(const vector2f1& point) {
   }
 
   Transform3f tfRobot;
+  auto trans = tfRobot.translation();
   tfRobot.setIdentity();
   tfRobot.translation().x() = point.x();  // This places the robot at the point inserted
   tfRobot.translation().y() = point.y();  // This will tell if point is even viable for the robot to exist at
   tfRobot.translation().z() = 0;
-//  tfRobot.rotation().eulerAngles(0, 1, 2).x() = 0;
-//  tfRobot.rotation().eulerAngles(0, 1, 2).y() = 0;
-//  tfRobot.rotation().eulerAngles(0, 1, 2).z() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).x() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).y() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).z() = 0;
 
   CollisionRequestf request;
   CollisionResultf result;
-  int counter = 1;
+  CollisionObjectf object1(robotModel, tfRobot);
   for(auto it : objects) {
-    collide(robotModel.get(), tfRobot, &it.first, it.second, request, result);
+    CollisionObjectf object2(it.first, it.second);
+    collide(&object1, &object2, request, result);
     if(result.isCollision()) {
-      std::cout << std::endl << "Collision with object " << counter << std::endl;
-      std::cout << "Number of contacts = " << result.numContacts() << std::endl;
+      std::cout << "Point = " << point.x() << ", " << point.y() << std::endl;
+      std::cout << "collided at " << it.second.translation().x() << ", " << it.second.translation().y() << std::endl;
       return true;                        // Point is not viable if collision is detected with any object
     }
-    counter++;
   }
 
   return false;
@@ -311,6 +315,10 @@ vector2f1 rapidRandomTree::getTreeStart() {
   }
 
   return tree.begin()->location_m;
+}
+
+std::vector<node> rapidRandomTree::getTree() {
+  return tree;
 }
 
 } // end namespace rrt

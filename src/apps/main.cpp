@@ -50,9 +50,7 @@ int main(int argc, char** argv) {
     }
 
     // Grow the trees until they connect
-    std::cout << "test 1" << std::endl;
     rrt::vector2f1 newStartTreePoint = qInit->growTreeTowardsRandom();
-    std::cout << "test 2" << std::endl;
     qGoal->growTreeTowardsPoint(newStartTreePoint);
     if(qGoal->goalReached()) {
       running = false;
