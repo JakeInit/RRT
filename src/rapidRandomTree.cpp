@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cmath>
 #include <random>
+#include <utility>
 
 // fcl includes
 //#include "fcl/math/detail/project.h"
@@ -33,6 +34,7 @@ namespace rrt {
 using namespace fcl;
 
 node::node() {
+  initialized = false;
   location_m.setZero();
   id = 0;
   neighbors.clear();
@@ -72,6 +74,7 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
   vector2f1 randomPoint, newPoint;
   bool randomPointCollison;
   bool robotoCollision = true;
+  uint64_t neighbor;
 
   while(robotoCollision) {
     // Find new point until random point does not collide
@@ -85,8 +88,8 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
       randomPointCollison = collisionDetection(randomPoint);
     }
 
-    // Find closest neighbor
-    auto neighbor = findClosestNeighbor(randomPoint);
+    // Find index of closest neighbor
+    neighbor = findClosestNeighbor(randomPoint);
 
     // Grow tree from closest neighbor towards random point by distance epsilon
     newPoint = findPointOnLine(tree.at(neighbor).location_m, randomPoint, true);
@@ -95,6 +98,8 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
     robotoCollision = collisionDetection(newPoint);
   }
 
+  // Make nearest neighbor point to new node.
+  tree.at(neighbor).neighbors.emplace_back(tree.size());
   // Add new point to tree
   tree.emplace_back(createNode(newPoint));
 
@@ -117,11 +122,22 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   }
 
   // Add new point to tree
+  if(reachedGoalPoint) {
+    setConnectingNeighbor(tree.at(neighbor));
+    return;
+  }
+
+  // Add new point to tree
   tree.emplace_back(createNode(newPoint));
+  // Make new node point to the nearest neighbor.
+  // This will allow the start tree to point to the connecting node
+  //  in the goal tree and then find the goal point
+  tree.end()->neighbors.emplace_back(neighbor);
 }
 
 node rapidRandomTree::createNode(vector2f1 newPt) {
   node newNode;
+  newNode.initialized = true;
   newNode.location_m.x() = newPt.x();
   newNode.location_m.y() = newPt.y();
   newNode.id = (uint64_t) tree.size();
@@ -136,7 +152,7 @@ uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
   }
 
   if(tree.size() == 1) {
-    return 0;
+    return 0;                             // closest neighbor will be only node in tree
   }
 
   std::vector<float> distances;
@@ -144,8 +160,10 @@ uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
     distances.emplace_back(distance(it.location_m, randomPt));
   }
 
+  // pull the iterator with the smalles distance value
   auto it = std::min_element(distances.begin(), distances.end());
-  return std::distance(distances.begin(), it);
+  auto index = std::distance(distances.begin(), it);  // get the index value of the vector at iterator
+  return index;
 }
 
 vector2f1 rapidRandomTree::findPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom) {
@@ -317,8 +335,16 @@ vector2f1 rapidRandomTree::getTreeStart() {
   return tree.begin()->location_m;
 }
 
-std::vector<node> rapidRandomTree::getTree() {
-  return tree;
+uint64_t rapidRandomTree::getIdOfLastPoint() {
+  if(tree.empty()) {
+    std::cout << "Returning invalid tree id" << std::endl;
+    return UINTMAX_MAX;
+  }
+  return tree.end()->id;
+}
+
+void rapidRandomTree::setConnectingNeighbor(node& leaf) {
+  connectingNeighbor = leaf;
 }
 
 } // end namespace rrt

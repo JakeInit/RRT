@@ -53,11 +53,38 @@ int main(int argc, char** argv) {
     rrt::vector2f1 newStartTreePoint = qInit->growTreeTowardsRandom();
     qGoal->growTreeTowardsPoint(newStartTreePoint);
     if(qGoal->goalReached()) {
-      running = false;
       std::cout << "Trees are connected. Path from start to goal is possible" << std::endl;
       double endTime = rrt::system::timerEvent::getRunTime_ms();
-      std::cout << "Time to find solution = " << endTime - startTime << "ms" << std::endl;
+      std::cout << "Time to connect trees = " << endTime - startTime << "ms" << std::endl;
       std::cout << "Number of attempts to grow trees = " << counter << std::endl;
+      // This means the last point added to start tree connects to goal tree
+      // Need the id of the goal tree for the start tree to connect to it
+      // Then combine the trees into 1 vector
+      //  1.) add the size of the start vector to the node id in the goal tree
+      //  2.) add the size of the start vector to the node ids in the neighbors vector of each node in the goal tree
+      //  3.) add the size of the start vector to the connecting node of the goal tree
+      //  4.) add the connect node of the goal tree to the last point created in the start tree in the neighbors list
+      auto startTree = qInit->getTree();
+      auto goalTree = qGoal->getTree();
+      auto connectingGoalNode = qGoal->getConnectingNeighbor();
+
+      for(auto it : goalTree) {           // Iterate through each node in the goal tree
+        it.id += startTree.size();
+        for(auto it2 : it.neighbors) {    // Iterate through every neighbor in each node of goal tree
+          it2 += startTree.size();
+        }
+      }
+
+      connectingGoalNode.id += startTree.size();
+
+      // Add index of connecting goal node as a neighbor in the nearest node of the startTree
+      startTree.at(qInit->getIdOfLastPoint()).neighbors.emplace_back(connectingGoalNode.id);
+
+      // Create the map of possible paths for the robot in the environment
+      std::vector<rrt::node> pathMap = startTree;
+      pathMap.insert(pathMap.end(), goalTree.begin(), goalTree.end());
+
+      running = false;
       std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     } else {
       counter++;

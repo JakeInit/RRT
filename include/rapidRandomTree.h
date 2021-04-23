@@ -20,6 +20,7 @@ namespace rrt {
 typedef Eigen::Matrix<float, 2, 1> vector2f1;
 
 struct node {
+  bool initialized;
   vector2f1 location_m;
   uint64_t id;
   std::vector<uint64_t> neighbors;
@@ -50,8 +51,10 @@ public:
   vector2f1 findPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom);
   static float distance(vector2f1 p1, vector2f1 p2);
   static float get_random(float lowerBound, float upperBound);
+  uint64_t getIdOfLastPoint();
   vector2f1 getTreeStart();
-  std::vector<node> getTree();
+  std::vector<node> getTree() const {return tree;}
+  node getConnectingNeighbor() const {return connectingNeighbor;}
 
 private:
   node createNode(vector2f1 newPt);
@@ -59,6 +62,9 @@ private:
   void setUpRobotModel();
   static void setUpObjects();
   bool collisionDetection(const vector2f1& point);
+  void setConnectingNeighbor(node& leaf);
+
+  node connectingNeighbor;
 
   std::string treeName;
   std::vector<node> tree;
