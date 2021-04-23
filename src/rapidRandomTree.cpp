@@ -13,15 +13,6 @@
 #include <utility>
 
 // fcl includes
-//#include "fcl/math/detail/project.h"
-//#include "fcl/geometry/bvh/BVH_model.h"
-//#include "fcl/math/sampler/sampler_r.h"
-//#include "fcl/math/sampler/sampler_se2.h"
-//#include "fcl/math/sampler/sampler_se2_disk.h"
-//#include "fcl/math/sampler/sampler_se3_euler.h"
-//#include "fcl/math/sampler/sampler_se3_euler_ball.h"
-//#include "fcl/math/sampler/sampler_se3_quat.h"
-//#include "fcl/math/sampler/sampler_se3_quat_ball.h"
 #include "fcl/narrowphase/collision.h"
 #include "fcl/math/geometry.h"
 
@@ -132,7 +123,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   // Make new node point to the nearest neighbor.
   // This will allow the start tree to point to the connecting node
   //  in the goal tree and then find the goal point
-  tree.end()->neighbors.emplace_back(neighbor);
+  tree.back().neighbors.emplace_back(neighbor);
 }
 
 node rapidRandomTree::createNode(vector2f1 newPt) {
@@ -337,7 +328,7 @@ vector2f1 rapidRandomTree::getTreeStart() {
     return emptyVector;
   }
 
-  return tree.begin()->location_m;
+  return tree.front().location_m;
 }
 
 uint64_t rapidRandomTree::getIdOfLastPoint() {
@@ -345,7 +336,7 @@ uint64_t rapidRandomTree::getIdOfLastPoint() {
     std::cout << "Returning invalid tree id" << std::endl;
     return UINTMAX_MAX;
   }
-  return tree.end()->id;
+  return tree.back().id;
 }
 
 void rapidRandomTree::setConnectingNeighbor(node& leaf) {
