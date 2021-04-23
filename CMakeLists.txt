@@ -33,6 +33,7 @@ find_package (Eigen3 REQUIRED NO_MODULE)
 find_package(Threads)
 find_package(Boost REQUIRED system filesystem thread locale date_time)
 find_package(fcl REQUIRED)
+find_package(SFML REQUIRED system graphics window)
 
 #----------------------------------------------------------------------
 #----Include Directories-----------------------------------------------
@@ -43,10 +44,12 @@ include_directories(/usr/include/glib-2.0/)
 include_directories(/usr/lib/${ARCHITECTURE}-linux-gnu/glib-2.0/include/)
 include_directories (/usr/local/include)
 include_directories(${EIGEN3_INCLUDE_DIR})
+include_directories(${FCL_INCLUDE_DIR})
+
 
 message(STATUS "eigen3 directory = " ${EIGEN3_INCLUDE_DIR})
 message(STATUS "Boost directory = " ${Boost_INCLUDE_DIRS})
-message(STATUS "FCL directory = " ${FCL_INCLUDE_DIR})
+message(STATUS "FCL directory = " ${FCL_INCLUDE_DIRS})
 
 #----------------------------------------------------------------------
 #------Link Libraries--------------------------------------------------
@@ -59,7 +62,7 @@ link_directories(${PROJECT_SOURCE_DIR}/lib)
 add_library(localRRT STATIC ${PROJECT_SRC})
 target_compile_definitions(localRRT PRIVATE _TURN_OFF_PLATFORM_STRING)
 target_compile_definitions(localRRT PRIVATE PROJECTDIR="${PROJECT_SOURCE_DIR}/")
-target_link_libraries(localRRT -lm boost_system boost_filesystem boost_thread boost_locale boost_date_time jsoncpp ccd fcl)
+target_link_libraries(localRRT -lm boost_system boost_filesystem boost_thread boost_locale boost_date_time jsoncpp ccd fcl sfml-graphics sfml-window sfml-system)
 set(LINK_LIBRARIES localRRT pthread)
 
 #----------------------------------------------------------------------

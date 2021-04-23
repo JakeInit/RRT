@@ -12,6 +12,7 @@
 #include <cstdio>
 #include <cmath>
 #include <memory>
+#include <SFML/Graphics.hpp>
 
 // local include
 #include "rapidRandomTree.h"
@@ -19,7 +20,7 @@
 #include "main.h"
 
 #define ROBOTRADIUS 1.0
-#define ATTEMPTS    500
+#define ATTEMPTS    1000
 
 using namespace mainspace;
 std::unique_ptr<rrt::rapidRandomTree> qInit = nullptr;
@@ -29,6 +30,46 @@ uint16_t counter = 0;
 int main(int argc, char** argv) {
   running = true;
   signal(SIGINT, mainspace::signalHandler);
+
+//  // create the window
+//  sf::RenderWindow window(sf::VideoMode(800, 600), "My window");
+//
+//  sf::RectangleShape line;
+//  line.setSize(sf::Vector2f(200, 3));
+//
+//  // create an array of 3 vertices that define a triangle primitive
+//  sf::VertexArray border(sf::LineStrip, 3);
+//
+//  // define the position of the triangle's points
+//  border[0].position = sf::Vector2f(10.f, 10.f);
+//  border[1].position = sf::Vector2f(100.f, 10.f);
+//  border[2].position = sf::Vector2f(100.f, 100.f);
+//
+//  // define the color of the triangle's points
+//  border[0].color = sf::Color::Red;
+//  border[1].color = sf::Color::Red;
+//  border[2].color = sf::Color::Red;
+//
+//  std::cout << "While window is open" << std::endl;
+//  while(window.isOpen()) {
+//    // check all the window's events that were triggered since the last iteration of the loop
+//    sf::Event event{};
+//    while (window.pollEvent(event)) {
+//      // "close requested" event: we close the window
+//      if (event.type == sf::Event::Closed)
+//        window.close();
+//    }
+//
+//    // clear the window with black color
+//    window.clear(sf::Color::Black);
+//
+//    // draw everything here...
+//    window.draw(line);
+//    window.draw(border);
+//
+//    // end the current frame
+//    window.display();
+//  }
 
   rrt::system::timerEvent timer;
   const float loopTime_ms = 10;
@@ -57,6 +98,7 @@ int main(int argc, char** argv) {
       double endTime = rrt::system::timerEvent::getRunTime_ms();
       std::cout << "Time to connect trees = " << endTime - startTime << "ms" << std::endl;
       std::cout << "Number of attempts to grow trees = " << counter << std::endl;
+      exit(0);
       // This means the last point added to start tree connects to goal tree
       // Need the id of the goal tree for the start tree to connect to it
       // Then combine the trees into 1 vector
@@ -94,7 +136,7 @@ int main(int argc, char** argv) {
       running = false;
       std::cout << "No viable path found in " << ATTEMPTS << " to grow trees." << std::endl;
       double endTime = rrt::system::timerEvent::getRunTime_ms();
-      std::cout << "Time to find solution = " << endTime - startTime << "ms" << std::endl;
+      std::cout << "Time ran = " << endTime - startTime << "ms" << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
   }

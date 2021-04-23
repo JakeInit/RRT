@@ -11,10 +11,16 @@ git clone https://github.com/JakeInit/RRT.git
 
 ## Dependencies
 
+**json**<br />
+sudo apt-get install libjsoncpp-dev
+
+**boost**<br />
+sudo apt-get install libboost-all-dev
+
 **eigen3**<br />
 sudo apt-get install libeigen3-dev
 
-**Octomap**<br />
+**octomap**<br />
 sudo apt-get install liboctomap-dev
 
 **libccd**<br />
@@ -35,6 +41,19 @@ make install <br />
 
 or on ubuntu <br />
 sudo apt-get install libfcl-dev
+
+**SFML**<br />
+sudo apt-get install libopenal-dev <br />
+sudo apt-get install -y vorbis-tools <br />
+sudo apt-get install libvorbis-dev <br />
+sudo apt install libflac-dev <br />
+
+git clone https://github.com/SFML/SFML.git <br />
+cd SFML <br />
+mkdir build && cd build <br />
+cmake .. <br />
+make <br />
+make install <br />
 
 ---
 

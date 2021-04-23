@@ -311,12 +311,12 @@ bool rapidRandomTree::collisionDetection(const vector2f1& point) {
   CollisionRequestf request;
   CollisionResultf result;
   CollisionObjectf object1(robotModel, tfRobot);
-  for(auto it : objects) {
+  for(const auto& it : objects) {
     CollisionObjectf object2(it.first, it.second);
     collide(&object1, &object2, request, result);
     if(result.isCollision()) {
-      std::cout << "Point = " << point.x() << ", " << point.y() << std::endl;
-      std::cout << "collided at " << it.second.translation().x() << ", " << it.second.translation().y() << std::endl;
+//      std::cout << "Point = " << point.x() << ", " << point.y() << std::endl;
+//      std::cout << "collided at " << it.second.translation().x() << ", " << it.second.translation().y() << std::endl;
       return true;                        // Point is not viable if collision is detected with any object
     }
   }
