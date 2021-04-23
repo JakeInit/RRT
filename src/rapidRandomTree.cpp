@@ -273,6 +273,11 @@ void rapidRandomTree::setUpRobotModel() {
 void rapidRandomTree::setUpObjects() {
   std::pair<std::shared_ptr<Boxf>, Transform3f> object;
   Transform3f tf;
+  tf.setIdentity();
+  tf.translation().z() = 0;
+  tf.rotation().eulerAngles(0, 1, 2)[0] = 0;
+  tf.rotation().eulerAngles(0, 1, 2)[1] = 0;
+  tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
 
   tf.translation().x() = 4.875;
   tf.translation().y() = 4.875;
