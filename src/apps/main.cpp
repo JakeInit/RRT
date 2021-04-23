@@ -21,58 +21,31 @@
 
 #define ROBOTRADIUS 1.0
 #define ATTEMPTS    1000
+#define WINDOWDIM   800.f
+#define LOOPTIME_MS 100
 
 using namespace mainspace;
 std::unique_ptr<rrt::rapidRandomTree> qInit = nullptr;
 std::unique_ptr<rrt::rapidRandomTree> qGoal = nullptr;
+std::unique_ptr<sf::RenderWindow> window = nullptr;
 uint16_t counter = 0;
+
+float windowResolution;
+
+void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2);
+rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 int main(int argc, char** argv) {
   running = true;
   signal(SIGINT, mainspace::signalHandler);
 
-//  // create the window
-//  sf::RenderWindow window(sf::VideoMode(800, 600), "My window");
-//
-//  sf::RectangleShape line;
-//  line.setSize(sf::Vector2f(200, 3));
-//
-//  // create an array of 3 vertices that define a triangle primitive
-//  sf::VertexArray border(sf::LineStrip, 3);
-//
-//  // define the position of the triangle's points
-//  border[0].position = sf::Vector2f(10.f, 10.f);
-//  border[1].position = sf::Vector2f(100.f, 10.f);
-//  border[2].position = sf::Vector2f(100.f, 100.f);
-//
-//  // define the color of the triangle's points
-//  border[0].color = sf::Color::Red;
-//  border[1].color = sf::Color::Red;
-//  border[2].color = sf::Color::Red;
-//
-//  std::cout << "While window is open" << std::endl;
-//  while(window.isOpen()) {
-//    // check all the window's events that were triggered since the last iteration of the loop
-//    sf::Event event{};
-//    while (window.pollEvent(event)) {
-//      // "close requested" event: we close the window
-//      if (event.type == sf::Event::Closed)
-//        window.close();
-//    }
-//
-//    // clear the window with black color
-//    window.clear(sf::Color::Black);
-//
-//    // draw everything here...
-//    window.draw(line);
-//    window.draw(border);
-//
-//    // end the current frame
-//    window.display();
-//  }
+  // create the window
+  window = std::make_unique<sf::RenderWindow>(sf::VideoMode(WINDOWDIM, WINDOWDIM), "Dual RRT");
+  windowResolution = 2*BOUNDARYWIDTH/WINDOWDIM;
+  std::cout << "Window Resolution = " << windowResolution << std::endl;
 
   rrt::system::timerEvent timer;
-  const float loopTime_ms = 10;
+  const float loopTime_ms = LOOPTIME_MS;
 
   qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", ROBOTRADIUS);
   qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", ROBOTRADIUS);
@@ -92,7 +65,19 @@ int main(int argc, char** argv) {
 
     // Grow the trees until they connect
     rrt::vector2f1 newStartTreePoint = qInit->growTreeTowardsRandom();
+    rrt::vector2f1 neighborNode = qInit->getConnectingNeighbor().location_m;
+    updateWindow(newStartTreePoint, neighborNode);
+
     qGoal->growTreeTowardsPoint(newStartTreePoint);
+    if(!qGoal->goalReached()) {
+      rrt::vector2f1 lastPoint = qGoal->getCoordinateOfLastNode();
+      neighborNode = qGoal->getConnectingNeighbor().location_m;
+      updateWindow(lastPoint, neighborNode);
+    } else {
+      updateWindow(newStartTreePoint, qGoal->getConnectingNeighbor().location_m);
+    }
+
+
     if(qGoal->goalReached()) {
       std::cout << "Trees are connected. Path from start to goal is possible" << std::endl;
       double endTime = rrt::system::timerEvent::getRunTime_ms();
@@ -137,7 +122,18 @@ int main(int argc, char** argv) {
       std::cout << "Time ran = " << endTime - startTime << "ms" << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
+  } // end run
+
+  while(window->isOpen()) {
+    // check all the window's events that were triggered since the last iteration of the loop
+    sf::Event event{};
+    while (window->pollEvent(event)) {
+      // "close requested" event: we close the window
+      if (event.type == sf::Event::Closed)
+        window->close();
+    }
   }
+
   shutdown();
   return 0;
 }
@@ -152,10 +148,70 @@ void mainspace::shutdown() {
     std::cout << "Removing qGoal" << std::endl;
     qGoal.reset();
   }
+
+  if(window != nullptr) {
+    std::cout << "Closing Window" << std::endl;
+    if(window->isOpen())
+      window->close();
+
+    window.reset();
+  }
   std::cout << "Shutting down the application." << std::endl;
 }
 
 void mainspace::signalHandler(int signum) {
   std::cout << "\nInterrupt signal (" << signum << ") received. Setting running to false" << std::endl;
   running = false;
+  std::cout << "\nClose Visualizer Window to finish closing down the application" << std::endl;
+}
+
+void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
+  sf::RectangleShape line;
+  line.setSize(sf::Vector2f(200, 3));
+
+  // create an array of 3 vertices that define a triangle primitive
+  sf::VertexArray border1(sf::LineStrip, 2);
+  pt1 = convertPointToWindow(pt1);
+  pt2 = convertPointToWindow(pt2);
+
+  // define the position of the triangle's points
+  border1[0].position = sf::Vector2f(pt1.x(), pt1.y());
+  border1[1].position = sf::Vector2f(pt2.x(), pt2.y());
+
+  // define the color of the triangle's points
+  border1[0].color = sf::Color::Red;
+  border1[1].color = sf::Color::Red;
+
+  if(window->isOpen()) {
+    // check all the window's events that were triggered since the last iteration of the loop
+    sf::Event event{};
+    while (window->pollEvent(event)) {
+      // "close requested" event: we close the window
+      if (event.type == sf::Event::Closed)
+        window->close();
+    }
+
+    // clear the window with black color
+    static bool windowCleared = false;
+    if(!windowCleared) {
+      window->clear(sf::Color::Black);
+      windowCleared = true;
+    }
+
+    // draw everything here...
+//    window->draw(line);
+    window->draw(border1);
+
+    // end the current frame
+    window->display();
+  }
+}
+
+rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point) {
+  rrt::vector2f1 convertedPoint;
+  convertedPoint.x() = point.x()/windowResolution;
+  convertedPoint.x() += (WINDOWDIM/2);
+  convertedPoint.y() = point.y()/windowResolution;
+  convertedPoint.y() += (WINDOWDIM/2);
+  return convertedPoint;
 }

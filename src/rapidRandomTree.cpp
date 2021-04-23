@@ -89,6 +89,8 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
     robotoCollision = collisionDetection(newPoint);
   }
 
+  // Set node of neighbor to new point
+  setConnectingNeighbor(tree.at(neighbor));
   // Make nearest neighbor point to new node.
   tree.at(neighbor).neighbors.emplace_back(tree.size());
   // Add new point to tree
@@ -112,9 +114,12 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
     return;                               // return without adding new point to tree
   }
 
+  // Store node of connecting neighbor to new point
+  setConnectingNeighbor(tree.at(neighbor));
+  lastNodeCoordinate = newPoint;
+
   // Add new point to tree
   if(reachedGoalPoint) {
-    setConnectingNeighbor(tree.at(neighbor));
     return;
   }
 

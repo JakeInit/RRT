@@ -52,6 +52,7 @@ public:
   static float distance(vector2f1 p1, vector2f1 p2);
   static float get_random(float lowerBound, float upperBound);
   uint64_t getIdOfLastPoint();
+  vector2f1 getCoordinateOfLastNode() const {return lastNodeCoordinate;}
   vector2f1 getTreeStart();
   std::vector<node> getTree() const {return tree;}
   node getConnectingNeighbor() const {return connectingNeighbor;}
@@ -65,6 +66,7 @@ private:
   void setConnectingNeighbor(node& leaf);
 
   node connectingNeighbor;
+  vector2f1 lastNodeCoordinate;
 
   std::string treeName;
   std::vector<node> tree;
