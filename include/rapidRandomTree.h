@@ -11,10 +11,6 @@
 #include <vector>
 #include "Eigen/Dense"
 
-#define EPSILON       0.2f
-#define BOUNDARYWIDTH 5.0f
-#define BOUNDAYHEIGHT 5.0f
-
 namespace rrt {
 
 typedef Eigen::Matrix<float, 2, 1> vector2f1;
@@ -87,6 +83,10 @@ private:
   std::vector<node> tree;
   std::vector<objectNode> objectInMap;
   objectNode robotInMap;
+
+  float maxStepDistance_m;
+  float boundaryWidth_m;
+  float boundaryHeight_m;
 
   float robotRadius;
   bool treeIsValid;

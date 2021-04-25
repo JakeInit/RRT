@@ -1,0 +1,15 @@
+{
+  "system": {
+    "loop_frequency_Hz": 10,
+    "maxNodes": 1000,
+    "visualizerHeight_pix": 800,
+    "visualizerWidth_pix": 800,
+    "stepDistance_m": 0.200,
+    "boundaryHeight_m": 5.000,
+    "boundaryWidth_m": 5.000
+  },
+  "robot": {
+    "width_m": 1.0,
+    "height_m": 1.0
+  }
+}

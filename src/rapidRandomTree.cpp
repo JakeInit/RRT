@@ -18,11 +18,14 @@
 
 // local include
 #include "rapidRandomTree.h"
+#include "jsonParser.h"
 #include "timerEvent.h"
 
 namespace rrt {
 
 using namespace fcl;
+
+rrt::system::jsonParser* configReader = nullptr;
 
 node::node() {
   initialized = false;
@@ -46,14 +49,20 @@ std::vector<std::pair<std::shared_ptr<Boxf>, Transform3f>> walls;
 rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_) {
   treeName = treeName_;
   robotRadius = robotRadius_;
+
+  configReader = rrt::system::jsonParser::getInstance();
+  maxStepDistance_m = configReader->paramtersForSystem.stepDistance_m;
+  boundaryWidth_m = configReader->paramtersForSystem.boundaryWidth_m;
+  boundaryHeight_m = configReader->paramtersForSystem.boundaryHeight_m;
+
   setUpRobotModel();
   setWalls();
   setUpObjects();
   vector2f1 startPt;
   bool collision = true;
   while(collision) {
-    startPt.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
-    startPt.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
+    startPt.x() = get_random(-boundaryWidth_m, boundaryWidth_m);
+    startPt.y() = get_random(-boundaryHeight_m, boundaryHeight_m);
     collision = collisionDetection(startPt);
   }
   initPoint = startPt ;
@@ -70,6 +79,10 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
 // De-Constructor
 rapidRandomTree::~rapidRandomTree() {
   std::cout << "De-constructing tree " << treeName << std::endl;
+  if(configReader != nullptr) {
+    configReader->deleteInstance();
+    configReader = nullptr;
+  }
 }
 
 vector2f1 rapidRandomTree::growTreeTowardsRandom() {
@@ -83,8 +96,8 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
     randomPointCollison = true;
     while (randomPointCollison) {
       // Create a random point
-      randomPoint.x() = get_random(-BOUNDARYWIDTH, BOUNDARYWIDTH);
-      randomPoint.y() = get_random(-BOUNDAYHEIGHT, BOUNDAYHEIGHT);
+      randomPoint.x() = get_random(-boundaryWidth_m, boundaryWidth_m);
+      randomPoint.y() = get_random(-boundaryHeight_m, boundaryHeight_m);
 
       // Check collision detector of random point
       randomPointCollison = collisionDetection(randomPoint);
@@ -188,12 +201,12 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
   if(dx == 0.f) {                         // Means we are on a vertical line
     x = endPt.x();
     if(dy > 0) {
-      y = startPt.y() + EPSILON;
+      y = startPt.y() + maxStepDistance_m;
       if(y > endPt.y()) {                 // Do not want to set new point past endpoint
         y = endPt.y();
       }
     } else {
-      y = startPt.y() - EPSILON;
+      y = startPt.y() - maxStepDistance_m;
       if(y < endPt.y()) {                 // Do not want to set new point past endpoint
         y = endPt.y();
       }
@@ -204,12 +217,12 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
   } else if(dy == 0.f) {                  // Means we are on a horizontal line
     y = endPt.y();
     if(dx > 0) {
-      x = startPt[0] + EPSILON;
+      x = startPt[0] + maxStepDistance_m;
       if(x > endPt.x()) {                 // Do not want to set new point past endpoint
         x = endPt.x();
       }
     } else {
-      x = startPt.x() - EPSILON;
+      x = startPt.x() - maxStepDistance_m;
       if(x < endPt.x()) {                 // Do not want to set new point past endpoint
         x = endPt.x();
       }
@@ -223,14 +236,14 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
   float SLOPE = dy/dx;
 
   // determine if epsilon goes past Goal point
-  double distanceFromEnd = MAG - EPSILON;
+  double distanceFromEnd = MAG - maxStepDistance_m;
   if(distanceFromEnd > 0) {               // goal point not past end point
     double b = startPt[1] - SLOPE*startPt[0];
     // Use dist formula with goal.Y subbed in to get goal.X
     double c = b - startPt[1];
     double A = pow(SLOPE,2) + 1;
     double B = 2*c*SLOPE - 2*startPt[0];
-    double C = pow(c,2) + pow(startPt[0],2) - pow(EPSILON,2);
+    double C = pow(c,2) + pow(startPt[0],2) - pow(maxStepDistance_m,2);
     // determine points based on quadratic formula
     double Xg1 = (-B + sqrt(pow(B,2) - 4*A*C))/(2*A);
     double Xg2 = (-B - sqrt(pow(B,2) - 4*A*C))/(2*A);
@@ -326,27 +339,27 @@ void rapidRandomTree::setWalls() {
   tf.rotation().eulerAngles(0, 1, 2)[1] = 0;
   tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
 
-  tf.translation().x() = BOUNDARYWIDTH + 0.050;
+  tf.translation().x() = boundaryWidth_m + 0.050;
   tf.translation().y() = 0;
-  std::shared_ptr<Boxf> wall1(new Boxf(0.10, BOUNDAYHEIGHT, 0));
+  std::shared_ptr<Boxf> wall1(new Boxf(0.10, boundaryHeight_m, 0));
   wall = {wall1, tf};
   walls.emplace_back(wall);
 
-  tf.translation().x() = -BOUNDARYWIDTH - 0.050;
+  tf.translation().x() = -boundaryWidth_m - 0.050;
   tf.translation().y() = 0;
-  std::shared_ptr<Boxf> wall2(new Boxf(0.10, BOUNDAYHEIGHT, 0));
+  std::shared_ptr<Boxf> wall2(new Boxf(0.10, boundaryHeight_m, 0));
   wall = {wall2, tf};
   walls.emplace_back(wall);
 
   tf.translation().x() = 0;
-  tf.translation().y() = -BOUNDAYHEIGHT - 0.050;
-  std::shared_ptr<Boxf> wall3(new Boxf(BOUNDARYWIDTH, 0.10, 0));
+  tf.translation().y() = -boundaryHeight_m - 0.050;
+  std::shared_ptr<Boxf> wall3(new Boxf(boundaryWidth_m, 0.10, 0));
   wall = {wall3, tf};
   walls.emplace_back(wall);
 
   tf.translation().x() = 0;
-  tf.translation().y() = BOUNDAYHEIGHT + 0.050;
-  std::shared_ptr<Boxf> wall4(new Boxf(BOUNDARYWIDTH, 0.10, 0));
+  tf.translation().y() = boundaryHeight_m + 0.050;
+  std::shared_ptr<Boxf> wall4(new Boxf(boundaryWidth_m, 0.10, 0));
   wall = {wall4, tf};
   walls.emplace_back(wall);
 }
@@ -480,7 +493,7 @@ bool rapidRandomTree::connectToNeighborSegment(vector2f1 &queryPt, uint64_t neig
   for(auto it : neighborNode.neighbors) { // Check all segments of nodes connecting to neighbor
     auto nearestPointOnSegment = closestPointOnSegment(neighborNode.location_m, tree.at(it).location_m, queryPt);
     auto distanceToNearest = distance(nearestPointOnSegment, queryPt);
-    if(distanceToNearest <= EPSILON) {
+    if(distanceToNearest <= maxStepDistance_m) {
       // Add point on segment to tree
       tree.emplace_back(createNode(nearestPointOnSegment));
       // Make new node point to the nearest neighbor

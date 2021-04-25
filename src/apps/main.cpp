@@ -16,53 +16,53 @@
 
 // local include
 #include "rapidRandomTree.h"
+#include "jsonParser.h"
 #include "timerEvent.h"
 #include "main.h"
-
-#define ROBOTRADIUS 1.0
-#define ATTEMPTS    1000
-#define WINDOWDIM   800.f
-#define LOOPTIME_MS 100
 
 using namespace mainspace;
 std::unique_ptr<rrt::rapidRandomTree> qInit = nullptr;
 std::unique_ptr<rrt::rapidRandomTree> qGoal = nullptr;
 std::unique_ptr<sf::RenderWindow> window = nullptr;
-uint16_t counter = 0;
-
-float windowResolution;
-
-void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2);
-void placeObjectInMap(rrt::objectNode objectInMap);
-void placeRobotInMap(rrt::objectNode robotInMap);
-rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 int main(int argc, char** argv) {
   running = true;
   signal(SIGINT, mainspace::signalHandler);
 
+  configReader = rrt::system::jsonParser::getInstance();
+  windowHeight_pix = configReader->paramtersForSystem.visualizerHeight_pix;
+  windowWidth_pix = configReader->paramtersForSystem.visualizerWidth_pix;
+  robotHeight_m = configReader->parametersForRobot.dims.height_m;
+  robotWidth_m = configReader->parametersForRobot.dims.width_m;
+  boundarySize_m = configReader->paramtersForSystem.boundaryWidth_m;
+  const uint64_t maxNodes = configReader->paramtersForSystem.maxNodes;
+
   // create the window
-  window = std::make_unique<sf::RenderWindow>(sf::VideoMode(WINDOWDIM, WINDOWDIM), "Dual RRT");
-  windowResolution = 2*BOUNDARYWIDTH/WINDOWDIM;
+  window = std::make_unique<sf::RenderWindow>(sf::VideoMode(windowWidth_pix, windowHeight_pix), "Dual RRT");
+  windowResolution = 2*boundarySize_m/((float) windowHeight_pix);
   std::cout << "Window Resolution = " << windowResolution << std::endl;
 
   rrt::system::timerEvent timer;
-  const float loopTime_ms = LOOPTIME_MS;
+  float loopFrequency_hz = configReader->paramtersForSystem.loop_frequency_Hz;
+  float loopTime_ms = 1000.0f / loopFrequency_hz;
 
-  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", ROBOTRADIUS);
-  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", ROBOTRADIUS);
+  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", robotHeight_m);
+  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", robotHeight_m);
   auto objects = qGoal->getObjects();
   if(!objects.empty()) {
-    for(auto it : objects) {
+    for(const auto& it : objects) {
       placeObjectInMap(it);
     }
   }
 
   placeRobotInMap(qInit->getRobotModel());
+  auto goalPoint = qGoal->getTreeStart();
+  placeGoalPointOnMap(goalPoint);
 
   std::cout << "Linear distance between start and end = " << rrt::rapidRandomTree::distance(qInit->getTreeStart(),
                                                                                     qGoal->getTreeStart()) << std::endl;
 
+  counter = 0;
   double startTime = rrt::system::timerEvent::getRunTime_ms();
   std::cout << "Entering the Running Loop" << std::endl;
   while(running) {
@@ -125,9 +125,9 @@ int main(int argc, char** argv) {
       counter++;
     }
 
-    if(counter >= ATTEMPTS) {
+    if(counter >= maxNodes) {
       running = false;
-      std::cout << "No viable path found in " << ATTEMPTS << " to grow trees." << std::endl;
+      std::cout << "No viable path found in " << maxNodes << " to grow trees." << std::endl;
       double endTime = rrt::system::timerEvent::getRunTime_ms();
       std::cout << "Time ran = " << endTime - startTime << "ms" << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -166,6 +166,11 @@ void mainspace::shutdown() {
 
     window.reset();
   }
+
+  if(configReader != nullptr) {
+    configReader->deleteInstance();
+    configReader = nullptr;
+  }
   std::cout << "Shutting down the application." << std::endl;
 }
 
@@ -175,7 +180,7 @@ void mainspace::signalHandler(int signum) {
   std::cout << "\nClose Visualizer Window to finish closing down the application" << std::endl;
 }
 
-void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
+void mainspace::updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
     // create an array of 3 vertices that define a triangle primitive
   sf::VertexArray border1(sf::LineStrip, 2);
   pt1 = convertPointToWindow(pt1);
@@ -214,7 +219,7 @@ void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
   }
 }
 
-void placeObjectInMap(rrt::objectNode objectInMap) {
+void mainspace::placeObjectInMap(const rrt::objectNode& objectInMap) {
   sf::RectangleShape object(sf::Vector2f(0, 0));
   object.setSize(sf::Vector2f(objectInMap.width/windowResolution,
                               objectInMap.height/windowResolution));
@@ -234,7 +239,7 @@ void placeObjectInMap(rrt::objectNode objectInMap) {
     }
 
     // draw everything here...
-    std::cout << "Drawing Object" << std::endl;
+    std::cout << "Drawing Object " << objectInMap.objectId << std::endl;
     window->draw(object);
 
     // end the current frame
@@ -242,7 +247,7 @@ void placeObjectInMap(rrt::objectNode objectInMap) {
   }
 }
 
-void placeRobotInMap(rrt::objectNode robotInMap) {
+void mainspace::placeRobotInMap(const rrt::objectNode& robotInMap) {
   sf::RectangleShape object(sf::Vector2f(0, 0));
   object.setSize(sf::Vector2f(robotInMap.width/windowResolution,
                               robotInMap.height/windowResolution));
@@ -272,11 +277,38 @@ void placeRobotInMap(rrt::objectNode robotInMap) {
   }
 }
 
-rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point) {
+void mainspace::placeGoalPointOnMap(rrt::vector2f1& goalPt) {
+  sf::CircleShape circle(0.100f/windowResolution);
+  circle.setFillColor(sf::Color(255, 0, 0));
+  circle.setOutlineColor(sf::Color(255, 0, 0));
+  circle.setOrigin(sf::Vector2f(0.100f/windowResolution, 0.100f/windowResolution));
+
+  auto convertedPoint = convertPointToWindow(goalPt);
+  circle.setPosition(sf::Vector2f(convertedPoint.x(), convertedPoint.y()));
+
+  if(window->isOpen()) {
+    // check all the window's events that were triggered since the last iteration of the loop
+    sf::Event event{};
+    while (window->pollEvent(event)) {
+      // "close requested" event: we close the window
+      if (event.type == sf::Event::Closed)
+        window->close();
+    }
+
+    // draw everything here...
+    std::cout << "Drawing Goal Point" << std::endl;
+    window->draw(circle);
+
+    // end the current frame
+    window->display();
+  }
+}
+
+rrt::vector2f1 mainspace::convertPointToWindow(rrt::vector2f1 point) {
   rrt::vector2f1 convertedPoint;
   convertedPoint.x() = point.x()/windowResolution;
-  convertedPoint.x() += (WINDOWDIM/2);
+  convertedPoint.x() += ((float) windowWidth_pix/2.f);
   convertedPoint.y() = point.y()/windowResolution;
-  convertedPoint.y() = (WINDOWDIM/2) - convertedPoint.y();
+  convertedPoint.y() = ((float) windowHeight_pix/2.f) - convertedPoint.y();
   return convertedPoint;
 }
