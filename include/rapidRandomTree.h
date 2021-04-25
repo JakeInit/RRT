@@ -64,16 +64,18 @@ public:
   std::vector<node> getTree() const {return tree;}
   node getConnectingNeighbor() const {return connectingNeighbor;}
   std::vector<objectNode> getObjects() const {return objectInMap;}
+  objectNode getRobotModel() const {return robotInMap;}
 
 private:
   node createNode(vector2f1 newPt);
   uint64_t findClosestNeighbor(const vector2f1& randomPt);
   void setUpRobotModel();
+  void setWalls();
   void placeRobotInMap();
   void setUpObjects();
   bool collisionDetection(const vector2f1& point);
   void setConnectingNeighbor(node& leaf);
-  vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom);
+  vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt);
   vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
   bool connectToNeighborSegment(vector2f1& queryPt, uint64_t neighbor);
 

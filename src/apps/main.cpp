@@ -34,6 +34,7 @@ float windowResolution;
 
 void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2);
 void placeObjectInMap(rrt::objectNode objectInMap);
+void placeRobotInMap(rrt::objectNode robotInMap);
 rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 int main(int argc, char** argv) {
@@ -56,6 +57,8 @@ int main(int argc, char** argv) {
       placeObjectInMap(it);
     }
   }
+
+  placeRobotInMap(qInit->getRobotModel());
 
   std::cout << "Linear distance between start and end = " << rrt::rapidRandomTree::distance(qInit->getTreeStart(),
                                                                                     qGoal->getTreeStart()) << std::endl;
@@ -232,6 +235,36 @@ void placeObjectInMap(rrt::objectNode objectInMap) {
 
     // draw everything here...
     std::cout << "Drawing Object" << std::endl;
+    window->draw(object);
+
+    // end the current frame
+    window->display();
+  }
+}
+
+void placeRobotInMap(rrt::objectNode robotInMap) {
+  sf::RectangleShape object(sf::Vector2f(0, 0));
+  object.setSize(sf::Vector2f(robotInMap.width/windowResolution,
+                              robotInMap.height/windowResolution));
+
+  object.setOrigin(robotInMap.width/(2*windowResolution), robotInMap.height/(2*windowResolution));
+  object.setFillColor(sf::Color(0, 0, 255));
+  object.setOutlineColor(sf::Color(0, 0, 255));
+
+  auto convertedPoint = convertPointToWindow(robotInMap.location_m);
+  object.setPosition(sf::Vector2f(convertedPoint.x(), convertedPoint.y()));
+
+  if(window->isOpen()) {
+    // check all the window's events that were triggered since the last iteration of the loop
+    sf::Event event{};
+    while (window->pollEvent(event)) {
+      // "close requested" event: we close the window
+      if (event.type == sf::Event::Closed)
+        window->close();
+    }
+
+    // draw everything here...
+    std::cout << "Drawing Robot" << std::endl;
     window->draw(object);
 
     // end the current frame

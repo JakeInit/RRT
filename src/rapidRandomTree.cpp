@@ -40,12 +40,14 @@ objectNode::objectNode() {
 
 std::shared_ptr<Boxf> robotModel;
 std::vector<std::pair<std::shared_ptr<Boxf>, Transform3f>> objects;
+std::vector<std::pair<std::shared_ptr<Boxf>, Transform3f>> walls;
 
 // Constructor
 rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_) {
   treeName = treeName_;
   robotRadius = robotRadius_;
   setUpRobotModel();
+  setWalls();
   setUpObjects();
   vector2f1 startPt;
   bool collision = true;
@@ -92,7 +94,7 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
     neighbor = findClosestNeighbor(randomPoint);
 
     // Grow tree from closest neighbor towards random point by distance epsilon
-    newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, true);
+    newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint);
 
     // Check collision detector of new point
     robotoCollision = collisionDetection(newPoint);
@@ -115,7 +117,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   // Find closest neighbor
   auto neighbor = findClosestNeighbor(setPt);
 
-  // Check if setPt can connect to nearest neighbor on a segment
+  // Check if setPt can connect to nearest neighbor or neighbor segment
   if(connectToNeighborSegment(setPt, neighbor)) {
     // Store node of connecting neighbor to new point
     setConnectingNeighbor(tree.at(neighbor));
@@ -125,7 +127,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   }
 
   // Grow tree from closest neighbor towards point by distance epsilon
-  newPoint = projectToPointOnLine(tree.at(neighbor).location_m, setPt, false);
+  newPoint = projectToPointOnLine(tree.at(neighbor).location_m, setPt);
 
   // Check collision detector
   if(collisionDetection(newPoint)) {
@@ -135,11 +137,6 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   // Store node of connecting neighbor for get function
   setConnectingNeighbor(tree.at(neighbor));
   lastNodeCoordinate = newPoint;
-
-  // Add new point to tree
-  if(reachedGoalPoint) {
-    return;
-  }
 
   // Add new point to tree
   tree.emplace_back(createNode(newPoint));
@@ -180,7 +177,7 @@ uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
   return index;
 }
 
-vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom) {
+vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& endPt) {
   vector2f1 newPoint;
   float x;
   float y;
@@ -194,13 +191,11 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
       y = startPt.y() + EPSILON;
       if(y > endPt.y()) {                 // Do not want to set new point past endpoint
         y = endPt.y();
-        reachedGoalPoint = !toRandom;
       }
     } else {
       y = startPt.y() - EPSILON;
       if(y < endPt.y()) {                 // Do not want to set new point past endpoint
         y = endPt.y();
-        reachedGoalPoint = !toRandom;
       }
     }
     newPoint.x() = x;
@@ -212,13 +207,11 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
       x = startPt[0] + EPSILON;
       if(x > endPt.x()) {                 // Do not want to set new point past endpoint
         x = endPt.x();
-        reachedGoalPoint = !toRandom;
       }
     } else {
       x = startPt.x() - EPSILON;
       if(x < endPt.x()) {                 // Do not want to set new point past endpoint
         x = endPt.x();
-        reachedGoalPoint = !toRandom;
       }
     }
     newPoint.x() = x;
@@ -257,7 +250,6 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
     }
   } else {                                // make end point the goal point
     newPoint = endPt;
-    reachedGoalPoint = !toRandom;
   }
 
   return newPoint;
@@ -324,6 +316,41 @@ void rapidRandomTree::setUpRobotModel() {
   robotModel = std::make_unique<Boxf>(robotRadius, robotRadius, 0);
 }
 
+void rapidRandomTree::setWalls() {
+  std::pair<std::shared_ptr<Boxf>, Transform3f> wall;
+  objectNode newObject;
+  Transform3f tf;
+  tf.setIdentity();
+  tf.translation().z() = 0;
+  tf.rotation().eulerAngles(0, 1, 2)[0] = 0;
+  tf.rotation().eulerAngles(0, 1, 2)[1] = 0;
+  tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
+
+  tf.translation().x() = BOUNDARYWIDTH + 0.050;
+  tf.translation().y() = 0;
+  std::shared_ptr<Boxf> wall1(new Boxf(0.10, BOUNDAYHEIGHT, 0));
+  wall = {wall1, tf};
+  walls.emplace_back(wall);
+
+  tf.translation().x() = -BOUNDARYWIDTH - 0.050;
+  tf.translation().y() = 0;
+  std::shared_ptr<Boxf> wall2(new Boxf(0.10, BOUNDAYHEIGHT, 0));
+  wall = {wall2, tf};
+  walls.emplace_back(wall);
+
+  tf.translation().x() = 0;
+  tf.translation().y() = -BOUNDAYHEIGHT - 0.050;
+  std::shared_ptr<Boxf> wall3(new Boxf(BOUNDARYWIDTH, 0.10, 0));
+  wall = {wall3, tf};
+  walls.emplace_back(wall);
+
+  tf.translation().x() = 0;
+  tf.translation().y() = BOUNDAYHEIGHT + 0.050;
+  std::shared_ptr<Boxf> wall4(new Boxf(BOUNDARYWIDTH, 0.10, 0));
+  wall = {wall4, tf};
+  walls.emplace_back(wall);
+}
+
 void rapidRandomTree::placeRobotInMap() {
   robotInMap.location_m = initPoint;
   robotInMap.width = robotRadius;
@@ -378,10 +405,6 @@ void rapidRandomTree::setUpObjects() {
 }
 
 bool rapidRandomTree::collisionDetection(const vector2f1& point) {
-  if(objects.empty()) {
-    return false;
-  }
-
   Transform3f tfRobot;
   auto trans = tfRobot.translation();
   tfRobot.setIdentity();
@@ -395,13 +418,30 @@ bool rapidRandomTree::collisionDetection(const vector2f1& point) {
   CollisionRequestf request;
   CollisionResultf result;
   CollisionObjectf object1(robotModel, tfRobot);
-  for(const auto& it : objects) {
+  if(!objects.empty()) {
+    for (const auto &it : objects) {
+      CollisionObjectf object2(it.first, it.second);
+      collide(&object1, &object2, request, result);
+      if (result.isCollision()) {
+        //      std::cout << "Point = " << point.x() << ", " << point.y() << std::endl;
+        //      std::cout << "collided at " << it.second.translation().x() << ", " << it.second.translation().y() << std::endl;
+        return true;                        // Point is not viable if collision is detected with any object
+      }
+    }
+  }
+
+  if(walls.empty()) {
+    return false;
+  }
+
+  // Check walls as well
+  for(const auto& it : walls) {
     CollisionObjectf object2(it.first, it.second);
     collide(&object1, &object2, request, result);
     if(result.isCollision()) {
 //      std::cout << "Point = " << point.x() << ", " << point.y() << std::endl;
 //      std::cout << "collided at " << it.second.translation().x() << ", " << it.second.translation().y() << std::endl;
-      return true;                        // Point is not viable if collision is detected with any object
+      return true;                        // Point is not viable if collision is detected with wall
     }
   }
 
@@ -437,14 +477,10 @@ bool rapidRandomTree::connectToNeighborSegment(vector2f1 &queryPt, uint64_t neig
     return false;                         // Will extend queryPt towards neighbor later
   }
 
-  std::cout << std::endl << "Query Pt = " << queryPt << std::endl;
   for(auto it : neighborNode.neighbors) { // Check all segments of nodes connecting to neighbor
     auto nearestPointOnSegment = closestPointOnSegment(neighborNode.location_m, tree.at(it).location_m, queryPt);
     auto distanceToNearest = distance(nearestPointOnSegment, queryPt);
-    std::cout << "Nearest Pt = " << nearestPointOnSegment << std::endl;
-    std::cout << "Distance to Nearest Pt = " << distanceToNearest << std::endl << std::endl;
     if(distanceToNearest <= EPSILON) {
-      std::cout << "Connecting to tree by segment" << std::endl;
       // Add point on segment to tree
       tree.emplace_back(createNode(nearestPointOnSegment));
       // Make new node point to the nearest neighbor
