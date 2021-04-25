@@ -33,6 +33,7 @@ uint16_t counter = 0;
 float windowResolution;
 
 void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2);
+void placeObjectInMap(rrt::objectNode objectInMap);
 rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 int main(int argc, char** argv) {
@@ -49,6 +50,12 @@ int main(int argc, char** argv) {
 
   qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", ROBOTRADIUS);
   qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", ROBOTRADIUS);
+  auto objects = qGoal->getObjects();
+  if(!objects.empty()) {
+    for(auto it : objects) {
+      placeObjectInMap(it);
+    }
+  }
 
   std::cout << "Linear distance between start and end = " << rrt::rapidRandomTree::distance(qInit->getTreeStart(),
                                                                                     qGoal->getTreeStart()) << std::endl;
@@ -166,10 +173,7 @@ void mainspace::signalHandler(int signum) {
 }
 
 void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
-  sf::RectangleShape line;
-  line.setSize(sf::Vector2f(200, 3));
-
-  // create an array of 3 vertices that define a triangle primitive
+    // create an array of 3 vertices that define a triangle primitive
   sf::VertexArray border1(sf::LineStrip, 2);
   pt1 = convertPointToWindow(pt1);
   pt2 = convertPointToWindow(pt2);
@@ -191,16 +195,44 @@ void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
         window->close();
     }
 
-    // clear the window with black color
-    static bool windowCleared = false;
-    if(!windowCleared) {
-      window->clear(sf::Color::Black);
-      windowCleared = true;
-    }
+//    // clear the window with black color
+//    static bool windowCleared = false;
+//    if(!windowCleared) {
+//      window->clear(sf::Color::Black);
+//      windowCleared = true;
+//    }
 
     // draw everything here...
 //    window->draw(line);
     window->draw(border1);
+
+    // end the current frame
+    window->display();
+  }
+}
+
+void placeObjectInMap(rrt::objectNode objectInMap) {
+  sf::RectangleShape object(sf::Vector2f(0, 0));
+  object.setSize(sf::Vector2f(objectInMap.width/windowResolution,
+                              objectInMap.height/windowResolution));
+
+  object.setOrigin(objectInMap.width/(2*windowResolution), objectInMap.height/(2*windowResolution));
+
+  auto convertedPoint = convertPointToWindow(objectInMap.location_m);
+  object.setPosition(sf::Vector2f(convertedPoint.x(), convertedPoint.y()));
+
+  if(window->isOpen()) {
+    // check all the window's events that were triggered since the last iteration of the loop
+    sf::Event event{};
+    while (window->pollEvent(event)) {
+      // "close requested" event: we close the window
+      if (event.type == sf::Event::Closed)
+        window->close();
+    }
+
+    // draw everything here...
+    std::cout << "Drawing Object" << std::endl;
+    window->draw(object);
 
     // end the current frame
     window->display();
@@ -212,6 +244,6 @@ rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point) {
   convertedPoint.x() = point.x()/windowResolution;
   convertedPoint.x() += (WINDOWDIM/2);
   convertedPoint.y() = point.y()/windowResolution;
-  convertedPoint.y() += (WINDOWDIM/2);
+  convertedPoint.y() = (WINDOWDIM/2) - convertedPoint.y();
   return convertedPoint;
 }

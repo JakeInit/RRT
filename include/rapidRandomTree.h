@@ -27,6 +27,14 @@ struct node {
   node();
 };
 
+struct objectNode {
+  uint64_t objectId;
+  vector2f1 location_m;
+  float width;
+  float height;
+  objectNode();
+};
+
 class rapidRandomTree {
 public:
   // Constructor
@@ -48,7 +56,6 @@ public:
   void growTreeTowardsPoint(vector2f1& setPt);
 
   bool goalReached() const {return reachedGoalPoint;}
-  vector2f1 findPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom);
   static float distance(vector2f1 p1, vector2f1 p2);
   static float get_random(float lowerBound, float upperBound);
   uint64_t getIdOfLastPoint();
@@ -56,20 +63,29 @@ public:
   vector2f1 getTreeStart();
   std::vector<node> getTree() const {return tree;}
   node getConnectingNeighbor() const {return connectingNeighbor;}
+  std::vector<objectNode> getObjects() const {return objectInMap;}
 
 private:
   node createNode(vector2f1 newPt);
   uint64_t findClosestNeighbor(const vector2f1& randomPt);
   void setUpRobotModel();
-  static void setUpObjects();
+  void placeRobotInMap();
+  void setUpObjects();
   bool collisionDetection(const vector2f1& point);
   void setConnectingNeighbor(node& leaf);
+  vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, bool toRandom);
+  vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
+  bool connectToNeighborSegment(vector2f1& queryPt, uint64_t neighbor);
 
   node connectingNeighbor;
   vector2f1 lastNodeCoordinate;
+  vector2f1 initPoint;
 
   std::string treeName;
   std::vector<node> tree;
+  std::vector<objectNode> objectInMap;
+  objectNode robotInMap;
+
   float robotRadius;
   bool treeIsValid;
   bool reachedGoalPoint;
