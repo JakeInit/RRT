@@ -7,12 +7,10 @@
 // /usr/include
 #include <iostream>
 #include <thread>
-#include <cstdio>
 #include <cmath>
 #include <random>
 #include <cstdlib>
 #include <utility>
-#include <boost/random.hpp>
 
 // local include
 #include "rapidRandomTree.h"
