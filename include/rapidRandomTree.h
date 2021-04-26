@@ -11,6 +11,10 @@
 #include <vector>
 #include "Eigen/Dense"
 
+// fcl includes
+#include "fcl/narrowphase/collision.h"
+#include "fcl/math/geometry.h"
+
 namespace rrt {
 
 typedef Eigen::Matrix<float, 2, 1> vector2f1;
@@ -34,7 +38,7 @@ struct objectNode {
 class rapidRandomTree {
 public:
   // Constructor
-  rapidRandomTree(const std::string& treeName_, float robotRadius_);
+  rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree);
   // Deconstructor
   ~rapidRandomTree();
 
@@ -60,6 +64,7 @@ public:
   std::vector<node> getTree() const {return tree;}
   node getConnectingNeighbor() const {return connectingNeighbor;}
   std::vector<objectNode> getObjects() const {return objectInMap;}
+  std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> getObjectAndTransform() const {return objects;}
   objectNode getRobotModel() const {return robotInMap;}
 
 private:
@@ -70,6 +75,7 @@ private:
   void placeRobotInMap();
   void setUpObjects();
   bool collisionDetection(const vector2f1& point);
+  bool newObstacleCollisionDetection(objectNode& newObject);
   void setConnectingNeighbor(node& leaf);
   vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt);
   vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
@@ -87,10 +93,16 @@ private:
   float maxStepDistance_m;
   float boundaryWidth_m;
   float boundaryHeight_m;
+  float maxObjectSize_m;
 
   float robotRadius;
-  bool treeIsValid;
   bool reachedGoalPoint;
+
+  uint64_t numberOfObjects;
+
+  std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>  robotModel;
+  std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> objects;
+  std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> walls;
 };
 } //  end namespace rrt
 

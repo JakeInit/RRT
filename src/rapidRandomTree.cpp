@@ -12,10 +12,6 @@
 #include <random>
 #include <utility>
 
-// fcl includes
-#include "fcl/narrowphase/collision.h"
-#include "fcl/math/geometry.h"
-
 // local include
 #include "rapidRandomTree.h"
 #include "jsonParser.h"
@@ -41,23 +37,32 @@ objectNode::objectNode() {
   height = 0;
 }
 
-std::shared_ptr<Boxf> robotModel;
-std::vector<std::pair<std::shared_ptr<Boxf>, Transform3f>> objects;
-std::vector<std::pair<std::shared_ptr<Boxf>, Transform3f>> walls;
-
 // Constructor
-rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_) {
+rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree) {
   treeName = treeName_;
   robotRadius = robotRadius_;
 
   configReader = rrt::system::jsonParser::getInstance();
-  maxStepDistance_m = configReader->paramtersForSystem.stepDistance_m;
-  boundaryWidth_m = configReader->paramtersForSystem.boundaryWidth_m;
-  boundaryHeight_m = configReader->paramtersForSystem.boundaryHeight_m;
+  maxStepDistance_m = configReader->parametersForSystem.stepDistance_m;
+  boundaryWidth_m = configReader->parametersForSystem.boundaryWidth_m;
+  boundaryHeight_m = configReader->parametersForSystem.boundaryHeight_m;
+  maxObjectSize_m = configReader->parametersForSystem.maxObjectSize_m;
+  numberOfObjects = configReader->parametersForSystem.maxObjects;
 
   setUpRobotModel();
-  setWalls();
-  setUpObjects();
+//  setWalls();
+  if(otherTree == nullptr) {     // other Tree will set up objects if not nullptr
+    setUpObjects();
+  } else {
+    objects = otherTree->getObjectAndTransform();
+    if(objects.empty()) {
+      std::cout << "There are no objects" << std::endl;
+    } else {
+      std::cout << "Objects copied from other tree" << std::endl;
+      objectInMap = otherTree->getObjects();
+    }
+  }
+
   vector2f1 startPt;
   bool collision = true;
   while(collision) {
@@ -65,6 +70,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
     startPt.y() = get_random(-boundaryHeight_m, boundaryHeight_m);
     collision = collisionDetection(startPt);
   }
+
   initPoint = startPt ;
   placeRobotInMap();
   std::cout << "Creating new tree " << treeName << " at point {x, y} = {" <<
@@ -72,7 +78,6 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
 
   tree.clear();
   tree.emplace_back(createNode(startPt));
-  treeIsValid = true;
   reachedGoalPoint = false;
 }
 
@@ -80,7 +85,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
 rapidRandomTree::~rapidRandomTree() {
   std::cout << "De-constructing tree " << treeName << std::endl;
   if(configReader != nullptr) {
-    configReader->deleteInstance();
+    rrt::system::jsonParser::deleteInstance();
     configReader = nullptr;
   }
 }
@@ -96,8 +101,8 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
     randomPointCollison = true;
     while (randomPointCollison) {
       // Create a random point
-      randomPoint.x() = get_random(-boundaryWidth_m, boundaryWidth_m);
-      randomPoint.y() = get_random(-boundaryHeight_m, boundaryHeight_m);
+      randomPoint.x() = get_random(-boundaryWidth_m + robotRadius/2, boundaryWidth_m - robotRadius/2);
+      randomPoint.y() = get_random(-boundaryHeight_m + robotRadius/2, boundaryHeight_m - robotRadius/2);
 
       // Check collision detector of random point
       randomPointCollison = collisionDetection(randomPoint);
@@ -171,7 +176,6 @@ node rapidRandomTree::createNode(vector2f1 newPt) {
 uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
   if(tree.empty()) {
     std::cout << "Tree is empty. This value is invalid" << std::endl;
-    treeIsValid = false;
     return 0;
   }
 
@@ -326,7 +330,16 @@ float rapidRandomTree::get_random(float lowerBound, float upperBound) {
 }
 
 void rapidRandomTree::setUpRobotModel() {
-  robotModel = std::make_unique<Boxf>(robotRadius, robotRadius, 0);
+  robotModel.first = std::make_unique<Boxf>(robotRadius, robotRadius, 0);
+  Transform3f tfRobot;
+  tfRobot.setIdentity();
+  tfRobot.translation().x() = 0;
+  tfRobot.translation().y() = 0;
+  tfRobot.translation().z() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).x() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).y() = 0;
+  tfRobot.rotation().eulerAngles(0, 1, 2).z() = 0;
+  robotModel.second = tfRobot;
 }
 
 void rapidRandomTree::setWalls() {
@@ -339,26 +352,26 @@ void rapidRandomTree::setWalls() {
   tf.rotation().eulerAngles(0, 1, 2)[1] = 0;
   tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
 
-  tf.translation().x() = boundaryWidth_m + 0.050;
+  tf.translation().x() = boundaryWidth_m + 0.050f;
   tf.translation().y() = 0;
   std::shared_ptr<Boxf> wall1(new Boxf(0.10, boundaryHeight_m, 0));
   wall = {wall1, tf};
   walls.emplace_back(wall);
 
-  tf.translation().x() = -boundaryWidth_m - 0.050;
+  tf.translation().x() = -boundaryWidth_m - 0.050f;
   tf.translation().y() = 0;
   std::shared_ptr<Boxf> wall2(new Boxf(0.10, boundaryHeight_m, 0));
   wall = {wall2, tf};
   walls.emplace_back(wall);
 
   tf.translation().x() = 0;
-  tf.translation().y() = -boundaryHeight_m - 0.050;
+  tf.translation().y() = -boundaryHeight_m - 0.050f;
   std::shared_ptr<Boxf> wall3(new Boxf(boundaryWidth_m, 0.10, 0));
   wall = {wall3, tf};
   walls.emplace_back(wall);
 
   tf.translation().x() = 0;
-  tf.translation().y() = boundaryHeight_m + 0.050;
+  tf.translation().y() = boundaryHeight_m + 0.050f;
   std::shared_ptr<Boxf> wall4(new Boxf(boundaryWidth_m, 0.10, 0));
   wall = {wall4, tf};
   walls.emplace_back(wall);
@@ -380,64 +393,43 @@ void rapidRandomTree::setUpObjects() {
   tf.rotation().eulerAngles(0, 1, 2)[1] = 0;
   tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
 
-  tf.translation().x() = 4.875;
-  tf.translation().y() = 4.875;
-  std::shared_ptr<Boxf> object1(new Boxf(0.25, 0.25, 0));
-  object = {object1, tf};
-  objects.emplace_back(object);
-  newObject.location_m.x() = 4.875;
-  newObject.location_m.y() = 4.875;
-  newObject.height = 0.25;
-  newObject.width = 0.25;
-  newObject.objectId = 0;
-  objectInMap.emplace_back(newObject);
+  bool collision;
+  numberOfObjects = (uint64_t) get_random(0.f, (float) numberOfObjects);
+  std::cout << "Number of objects = " << numberOfObjects << std::endl;
+  for(int i = 0; i < numberOfObjects; i++) {
+    newObject.height = get_random(0.100f, maxObjectSize_m);
+    newObject.width = newObject.height;
 
-  tf.translation().x() = 0.000;
-  tf.translation().y() = 3.000;
-  std::shared_ptr<Boxf> object2(new Boxf(0.50, 0.50, 0));
-  object = {object2, tf};
-  objects.emplace_back(object);
-  newObject.location_m.x() = 0.000;
-  newObject.location_m.y() = 3.000;
-  newObject.height = 0.50;
-  newObject.width = 0.50;
-  newObject.objectId = 1;
-  objectInMap.emplace_back(newObject);
+    collision = true;
+    while(collision) {
+      newObject.location_m.x() = get_random(-boundaryWidth_m, boundaryWidth_m);
+      newObject.location_m.y() = get_random(-boundaryHeight_m, boundaryHeight_m);
+      collision = newObstacleCollisionDetection(newObject);
+    }
 
-  tf.translation().x() = -2.550;
-  tf.translation().y() = -3.000;
-  std::shared_ptr<Boxf> object3(new Boxf(0.50, 0.50, 0));
-  object = {object3, tf};
-  objects.emplace_back(object);
-  newObject.location_m.x() = -2.550;
-  newObject.location_m.y() = -3.000;
-  newObject.height = 0.50;
-  newObject.width = 0.50;
-  newObject.objectId = 2;
-  objectInMap.emplace_back(newObject);
+    tf.translation().x() = newObject.location_m.x();
+    tf.translation().y() = newObject.location_m.y();
+    std::shared_ptr<Boxf> box(new Boxf(newObject.width, newObject.height, 0));
+    object = {box, tf};
+    objects.emplace_back(object);
+
+    newObject.objectId = i;
+    objectInMap.emplace_back(newObject);
+  }
 }
 
 bool rapidRandomTree::collisionDetection(const vector2f1& point) {
-  Transform3f tfRobot;
-  auto trans = tfRobot.translation();
-  tfRobot.setIdentity();
-  tfRobot.translation().x() = point.x();  // This places the robot at the point inserted
-  tfRobot.translation().y() = point.y();  // This will tell if point is even viable for the robot to exist at
-  tfRobot.translation().z() = 0;
-  tfRobot.rotation().eulerAngles(0, 1, 2).x() = 0;
-  tfRobot.rotation().eulerAngles(0, 1, 2).y() = 0;
-  tfRobot.rotation().eulerAngles(0, 1, 2).z() = 0;
-
   CollisionRequestf request;
   CollisionResultf result;
-  CollisionObjectf object1(robotModel, tfRobot);
+
+  robotModel.second.translation().x() = point.x();  // This places the robot at the point inserted
+  robotModel.second.translation().y() = point.y();  // This will tell if point is even viable for the robot to exist at
+  CollisionObjectf object1(robotModel.first, robotModel.second);
   if(!objects.empty()) {
     for (const auto &it : objects) {
       CollisionObjectf object2(it.first, it.second);
       collide(&object1, &object2, request, result);
       if (result.isCollision()) {
-        //      std::cout << "Point = " << point.x() << ", " << point.y() << std::endl;
-        //      std::cout << "collided at " << it.second.translation().x() << ", " << it.second.translation().y() << std::endl;
         return true;                        // Point is not viable if collision is detected with any object
       }
     }
@@ -452,12 +444,50 @@ bool rapidRandomTree::collisionDetection(const vector2f1& point) {
     CollisionObjectf object2(it.first, it.second);
     collide(&object1, &object2, request, result);
     if(result.isCollision()) {
-//      std::cout << "Point = " << point.x() << ", " << point.y() << std::endl;
-//      std::cout << "collided at " << it.second.translation().x() << ", " << it.second.translation().y() << std::endl;
       return true;                        // Point is not viable if collision is detected with wall
     }
   }
 
+  return false;
+}
+
+bool rapidRandomTree::newObstacleCollisionDetection(objectNode &newObject) {
+  Transform3f tfNewObject;
+  tfNewObject.setIdentity();
+  tfNewObject.translation().x() = newObject.location_m.x();
+  tfNewObject.translation().y() = newObject.location_m.y();
+  tfNewObject.translation().z() = 0;
+  tfNewObject.rotation().eulerAngles(0, 1, 2).x() = 0;
+  tfNewObject.rotation().eulerAngles(0, 1, 2).y() = 0;
+  tfNewObject.rotation().eulerAngles(0, 1, 2).z() = 0;
+
+  std::shared_ptr<Boxf> box(new Boxf(newObject.width, newObject.height, 0));
+
+  CollisionRequestf request;
+  CollisionResultf result;
+  CollisionObjectf object1(box, tfNewObject);
+  if(!objects.empty()) {
+    for (const auto &it : objects) {
+      CollisionObjectf object2(it.first, it.second);
+      collide(&object1, &object2, request, result);
+      if (result.isCollision()) {
+        return true;                        // Point is not viable if collision is detected with any object
+      }
+    }
+  }
+
+  if(walls.empty()) {
+    return false;
+  }
+
+  // Check walls as well
+  for(const auto& it : walls) {
+    CollisionObjectf object2(it.first, it.second);
+    collide(&object1, &object2, request, result);
+    if(result.isCollision()) {
+      return true;                        // Point is not viable if collision is detected with wall
+    }
+  }
   return false;
 }
 

@@ -28,7 +28,9 @@ public:
     float stepDistance_m;
     float boundaryHeight_m;
     float boundaryWidth_m;
+    float maxObjectSize_m;
     uint64_t maxNodes;
+    uint64_t maxObjects;
     uint64_t visualizerHeight_pix;
     uint64_t visualizerWidth_pix;
     systemConfiguration();
@@ -40,7 +42,7 @@ public:
   static void deleteInstance();
 
   robotConfiguration parametersForRobot;
-  systemConfiguration paramtersForSystem;
+  systemConfiguration parametersForSystem;
 
 private:
   // Constructor

@@ -30,12 +30,12 @@ int main(int argc, char** argv) {
   signal(SIGINT, mainspace::signalHandler);
 
   configReader = rrt::system::jsonParser::getInstance();
-  windowHeight_pix = configReader->paramtersForSystem.visualizerHeight_pix;
-  windowWidth_pix = configReader->paramtersForSystem.visualizerWidth_pix;
+  windowHeight_pix = configReader->parametersForSystem.visualizerHeight_pix;
+  windowWidth_pix = configReader->parametersForSystem.visualizerWidth_pix;
   robotHeight_m = configReader->parametersForRobot.dims.height_m;
   robotWidth_m = configReader->parametersForRobot.dims.width_m;
-  boundarySize_m = configReader->paramtersForSystem.boundaryWidth_m;
-  const uint64_t maxNodes = configReader->paramtersForSystem.maxNodes;
+  boundarySize_m = configReader->parametersForSystem.boundaryWidth_m;
+  const uint64_t maxNodes = configReader->parametersForSystem.maxNodes;
 
   // create the window
   window = std::make_unique<sf::RenderWindow>(sf::VideoMode(windowWidth_pix, windowHeight_pix), "Dual RRT");
@@ -43,12 +43,12 @@ int main(int argc, char** argv) {
   std::cout << "Window Resolution = " << windowResolution << std::endl;
 
   rrt::system::timerEvent timer;
-  float loopFrequency_hz = configReader->paramtersForSystem.loop_frequency_Hz;
+  float loopFrequency_hz = configReader->parametersForSystem.loop_frequency_Hz;
   float loopTime_ms = 1000.0f / loopFrequency_hz;
 
-  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", robotHeight_m);
-  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", robotHeight_m);
-  auto objects = qGoal->getObjects();
+  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", robotHeight_m, nullptr);
+  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", robotHeight_m, qInit.get());
+  auto objects = qInit->getObjects();
   if(!objects.empty()) {
     for(const auto& it : objects) {
       placeObjectInMap(it);
@@ -168,7 +168,7 @@ void mainspace::shutdown() {
   }
 
   if(configReader != nullptr) {
-    configReader->deleteInstance();
+    rrt::system::jsonParser::deleteInstance();
     configReader = nullptr;
   }
   std::cout << "Shutting down the application." << std::endl;
