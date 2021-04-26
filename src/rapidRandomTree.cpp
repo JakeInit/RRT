@@ -10,7 +10,9 @@
 #include <cstdio>
 #include <cmath>
 #include <random>
+#include <cstdlib>
 #include <utility>
+#include <boost/random.hpp>
 
 // local include
 #include "rapidRandomTree.h"
@@ -24,7 +26,7 @@ using namespace fcl;
 rrt::system::jsonParser* configReader = nullptr;
 
 node::node() {
-  initialized = false;
+  goalNode = false;
   location_m.setZero();
   id = 0;
   neighbors.clear();
@@ -38,7 +40,7 @@ objectNode::objectNode() {
 }
 
 // Constructor
-rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree) {
+rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree, bool goalTree_) {
   treeName = treeName_;
   robotRadius = robotRadius_;
 
@@ -50,7 +52,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
   numberOfObjects = configReader->parametersForSystem.maxObjects;
 
   setUpRobotModel();
-//  setWalls();
+  setWalls();
   if(otherTree == nullptr) {     // other Tree will set up objects if not nullptr
     setUpObjects();
   } else {
@@ -77,7 +79,11 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
     startPt.x() << ", " << startPt.y() << "}" << std::endl;
 
   tree.clear();
-  tree.emplace_back(createNode(startPt));
+  auto newNode = createNode(startPt);
+  if(goalTree_) {
+    newNode.goalNode = true;
+  }
+  tree.emplace_back(newNode);
   reachedGoalPoint = false;
 }
 
@@ -166,7 +172,6 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
 
 node rapidRandomTree::createNode(vector2f1 newPt) {
   node newNode;
-  newNode.initialized = true;
   newNode.location_m.x() = newPt.x();
   newNode.location_m.y() = newPt.y();
   newNode.id = (uint64_t) tree.size();
@@ -176,11 +181,7 @@ node rapidRandomTree::createNode(vector2f1 newPt) {
 uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
   if(tree.empty()) {
     std::cout << "Tree is empty. This value is invalid" << std::endl;
-    return 0;
-  }
-
-  if(tree.size() == 1) {
-    return 0;                             // closest neighbor will be only node in tree
+    exit(0);
   }
 
   std::vector<float> distances;
@@ -188,7 +189,7 @@ uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
     distances.emplace_back(distance(it.location_m, randomPt));
   }
 
-  // pull the iterator with the smalles distance value
+  // pull the iterator with the smallest distance value
   auto it = std::min_element(distances.begin(), distances.end());
   auto index = std::distance(distances.begin(), it);  // get the index value of the vector at iterator
   return index;
@@ -320,13 +321,9 @@ float rapidRandomTree::distance(vector2f1 p1, vector2f1 p2) {
 }
 
 float rapidRandomTree::get_random(float lowerBound, float upperBound) {
-  // seed based on time in ms
-  double currentTime = system::timerEvent::getRunTime_ms();   // returns epoch in ms
-  static std::default_random_engine e((unsigned long) (currentTime));
-  static std::uniform_real_distribution<> dis(lowerBound, upperBound);
-  auto randomValue = (float) dis(e);
-//  std::cout << "random value = " << randomValue << std::endl;
-  return randomValue;
+  std::random_device rd;
+  std::uniform_real_distribution<> dist(lowerBound, upperBound);
+  return (float) dist(rd);
 }
 
 void rapidRandomTree::setUpRobotModel() {

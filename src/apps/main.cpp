@@ -46,8 +46,8 @@ int main(int argc, char** argv) {
   float loopFrequency_hz = configReader->parametersForSystem.loop_frequency_Hz;
   float loopTime_ms = 1000.0f / loopFrequency_hz;
 
-  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", robotHeight_m, nullptr);
-  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", robotHeight_m, qInit.get());
+  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", robotHeight_m, nullptr, false);
+  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", robotHeight_m, qInit.get(), true);
   auto objects = qInit->getObjects();
   if(!objects.empty()) {
     for(const auto& it : objects) {

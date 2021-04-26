@@ -20,7 +20,7 @@ namespace rrt {
 typedef Eigen::Matrix<float, 2, 1> vector2f1;
 
 struct node {
-  bool initialized;
+  bool goalNode;
   vector2f1 location_m;
   uint64_t id;
   std::vector<uint64_t> neighbors;
@@ -38,7 +38,7 @@ struct objectNode {
 class rapidRandomTree {
 public:
   // Constructor
-  rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree);
+  rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree, bool goalTree_);
   // Deconstructor
   ~rapidRandomTree();
 

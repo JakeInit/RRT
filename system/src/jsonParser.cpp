@@ -84,8 +84,6 @@ void jsonParser::deleteInstance() {
     delete instance;
     instance = nullptr;
     std::cout << "deleted instance of jsonParser" << std::endl;
-  } else {
-    std::cout << "Could not delete jsonParser instance since already nullptr" << std::endl;
   }
 }
 
