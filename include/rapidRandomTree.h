@@ -44,9 +44,9 @@ public:
 
   /**
    * @brief     grows tree towards a random point
-   * @return    returns new point
+   * @return    none
    */
-  vector2f1 growTreeTowardsRandom();
+  void growTreeTowardsRandom();
 
   /**
    * @brief     grows tree towards specified point

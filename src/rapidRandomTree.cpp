@@ -94,7 +94,7 @@ rapidRandomTree::~rapidRandomTree() {
   }
 }
 
-vector2f1 rapidRandomTree::growTreeTowardsRandom() {
+void rapidRandomTree::growTreeTowardsRandom() {
   vector2f1 randomPoint, newPoint;
   bool randomPointCollison;
   bool robotoCollision = true;
@@ -122,15 +122,13 @@ vector2f1 rapidRandomTree::growTreeTowardsRandom() {
     robotoCollision = collisionDetection(newPoint);
   }
 
-  // Set node of neighbor to new point
-  setConnectingNeighbor(tree.at(neighbor));
+  // Set node of neighbor for access
+  setConnectingNeighbor(tree.at(neighbor));           // graph will use neighbor location as vertex
   // Make nearest neighbor point to new node.
-  tree.at(neighbor).neighbors.emplace_back(tree.size());
+  tree.at(neighbor).neighbors.emplace_back(tree.size()); // Id of new node being placed in tree
   // Add new point to tree
   tree.emplace_back(createNode(newPoint));
-
-  // returns xy-coordinates of new point
-  return newPoint;
+  lastNodeCoordinate = newPoint;                        // last point added to tree, other vertex in graph
 }
 
 void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
@@ -141,9 +139,14 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
 
   // Check if setPt can connect to nearest neighbor or neighbor segment
   if(connectToNeighborSegment(setPt, neighbor)) {
-    // Store node of connecting neighbor to new point
-    setConnectingNeighbor(tree.at(neighbor));
-    lastNodeCoordinate = newPoint;
+    return;
+  }
+
+  // Get distance from setPt to nearest neighbor
+  auto distanceToNeighbor = distance(setPt, tree.at(neighbor).location_m);
+  if(distanceToNeighbor < maxStepDistance_m) {
+    setConnectingNeighbor(tree.at(neighbor));           // Can be used to connect last start tree point to this neighbor
+    lastNodeCoordinate = tree.at(neighbor).location_m;    // The neighbor coordinate to connect to
     reachedGoalPoint = true;
     return;
   }
@@ -153,12 +156,12 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
 
   // Check collision detector
   if(collisionDetection(newPoint)) {
-    return;                               // return without adding new point to tree
+    return;                                   // return without adding new point to tree
   }
 
-  // Store node of connecting neighbor for get function
-  setConnectingNeighbor(tree.at(neighbor));
-  lastNodeCoordinate = newPoint;
+  // Store neighbor connecting to new point
+  setConnectingNeighbor(tree.at(neighbor));   // On Graph will connect new point to this neighbor node
+  lastNodeCoordinate = newPoint;                 // point of the neighbor node being connected to new point
 
   // Add new point to tree
   tree.emplace_back(createNode(newPoint));
@@ -517,12 +520,24 @@ bool rapidRandomTree::connectToNeighborSegment(vector2f1 &queryPt, uint64_t neig
 
   for(auto it : neighborNode.neighbors) { // Check all segments of nodes connecting to neighbor
     auto nearestPointOnSegment = closestPointOnSegment(neighborNode.location_m, tree.at(it).location_m, queryPt);
+
+    // It is known no other node will be closer than the actual neighbor node
+    // So only check if nearestPointOnSegment came out to be the neighbor node location
+    if(nearestPointOnSegment == tree.at(neighbor).location_m) {
+      return false;                       // Will later check if can directly connect to neighbor
+    }
+
     auto distanceToNearest = distance(nearestPointOnSegment, queryPt);
     if(distanceToNearest <= maxStepDistance_m) {
       // Add point on segment to tree
       tree.emplace_back(createNode(nearestPointOnSegment));
-      // Make new node point to the nearest neighbor
+      // Newest node will point to nearest neighbor
       tree.back().neighbors.emplace_back(neighbor);
+
+      // Store connecting node to new point for access
+      setConnectingNeighbor(tree.back());             // This is the node the start tree will connect to
+      lastNodeCoordinate = nearestPointOnSegment;        // This is the location of the connecting node
+      reachedGoalPoint = true;
       return true;  // Indicates we connected two trees together by segment
     }
   }
