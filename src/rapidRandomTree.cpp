@@ -123,6 +123,9 @@ void rapidRandomTree::growTreeTowardsRandom() {
     // Find index of closest neighbor
     neighbor = findClosestNeighbor(randomPoint, tree);
 
+    // Check against other tree for direct connection first from nearest neighbor to its nearest neighbor
+    randomPoint = connectToOtherTree(randomPoint, neighbor);
+
     // Grow tree from closest neighbor towards random point by distance epsilon
     newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, maxStepDistance_m);
 
@@ -610,6 +613,95 @@ bool rapidRandomTree::connectToNeighborSegment(vector2f1 &queryPt, uint64_t neig
   }
 
   return false;
+}
+
+vector2f1 rapidRandomTree::connectToOtherTree(vector2f1& point, uint64_t thisNeighbor) {
+  vector2f1 neighborLocation_m = tree.at(thisNeighbor).location_m;
+  if(otherTree.empty()) {
+    return point;
+  }
+
+  auto otherTreeNearestNeighbor = findClosestNeighbor(neighborLocation_m, otherTree);
+  auto otherNeighbor_m = otherTree.at(otherTreeNearestNeighbor).location_m;
+
+  // Check nearest neighbor in other tree to it nearest neighbors for intersection of current neighbor to point
+  for(const auto it : otherTree.at(otherTreeNearestNeighbor).neighbors) {
+    auto otherNeighborsNeighbor_m = otherTree.at(it).location_m;
+    if(lineIntersection(point, point, neighborLocation_m, otherNeighbor_m, otherNeighborsNeighbor_m, maxStepDistance_m)) {
+      // Means the point does intersect a segment on the other tree
+      return point;
+    }
+  }
+
+  return point;
+}
+
+bool rapidRandomTree::lineIntersection(vector2f1 &intersectPt, vector2f1 A, vector2f1 B,
+                                       vector2f1 C, vector2f1 D, float step_m) {
+  /*
+    1. a1x + b1y = c1
+    2. a2x + b2y = c2
+
+    multiply 1. by b2 and 2 by b1
+
+    1. a1b2x + b1b2y = c1b2
+    2. a2b1x + b2b1y = c2b1
+
+    subtract 1 and 2
+
+    (a1b2 – a2b1) x = c1b2 – c2b1
+
+    Solve for x. Do similar operation for y
+  */
+
+  float x, y;
+  // Line AB represented as a1x + b1y = c1
+  float a1 = B.y() - A.y();
+  float b1 = A.x() - B.x();
+  float c1 = a1*(A.x()) + b1*(A.y());
+
+  // Line CD represented as a2x + b2y = c2
+  float a2 = D.y() - C.y();
+  float b2 = C.x() - D.x();
+  float c2 = a2*(C.x())+ b2*(C.y());
+
+  float determinant = a1*b2 - a2*b1;
+  if(determinant == 0) {
+    // Lines are parallel
+    return false;
+  } else {
+    x = (b2*c1 - b1*c2)/determinant;
+    y = (a1*c2 - a2*c1)/determinant;
+  }
+
+  if(x < std::min(A.x(), B.x()) || x > std::max(A.x(), B.x())) {
+    return false;
+  }
+
+  if(x < std::min(C.x(), D.x()) || x > std::max(C.x(), D.x())) {
+    return false;
+  }
+
+  if(y < std::min(A.y(), B.y()) || y > std::max(A.y(), B.y())) {
+    return false;
+  }
+
+  if(y < std::min(C.y(), D.y()) || y > std::max(C.y(), D.y())) {
+    return false;
+  }
+
+  vector2f1 temp;
+  temp.x() = x;
+  temp.y() = y;
+  auto dist = distance(temp, B);
+  if(dist > step_m) {
+    return false;
+  }
+
+  // ptA2 is the neigbor node location of this object's tree
+  intersectPt = projectToPointOnLine(temp, B, dist/2);
+
+  return true;
 }
 
 } // end namespace rrt

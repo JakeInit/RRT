@@ -60,6 +60,9 @@ public:
   static uint64_t findClosestNeighbor(const vector2f1& randomPt, const std::vector<node>& searchTree);
   static vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, float distanceToProject);
   static vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
+  static bool lineIntersection(vector2f1& intersectPt, rrt::vector2f1 A, rrt::vector2f1 B, rrt::vector2f1 C, rrt::vector2f1 D, float step_m);
+
+  void setOtherTree(const std::vector<node>& otherTree_) {otherTree = otherTree_;}
 
   // Get functions of object class variables that are read only
   bool goalReached() const {return reachedGoalPoint;}
@@ -84,13 +87,15 @@ private:
   bool newObstacleCollisionDetection(objectNode& newObject);
   void setConnectingNeighbor(node& leaf);
   bool connectToNeighborSegment(vector2f1& queryPt, uint64_t neighbor);
+  vector2f1 connectToOtherTree(vector2f1& point, uint64_t thisNeighbor);
 
   node connectingNeighbor;
   vector2f1 lastNodeCoordinate;
   vector2f1 initPoint;
 
   std::string treeName;
-  std::vector<node> tree;
+  std::vector<node> tree;       // This object's tree being expanded
+  std::vector<node> otherTree;  // Dual tree trying to connect with
 
   objectNode robotInMap;
   std::vector<objectNode> border;

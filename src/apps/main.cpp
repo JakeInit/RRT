@@ -43,6 +43,7 @@ int main(int argc, char** argv) {
 
     if(!qGoal->goalReached()) {                                                 // Grow the trees until they connect
       // Grow the starting tree
+      qInit->setOtherTree(qGoal->getTree());                                    // Pass goal tree to start
       qInit->growTreeTowardsRandom();
       rrt::vector2f1 newStartTreePoint = qInit->getCoordinateOfLastNode();      // newStartTree point is newest point
       rrt::vector2f1 neighborNode = qInit->getConnectingNeighbor().location_m;  // location of last neighbor
