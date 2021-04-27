@@ -353,55 +353,71 @@ void mainspace::findPath() {
 
   // Add starting node to open list
   allNodes.front().inOpenList = true;
+  allNodes.front().openListID = 0;
   openList.emplace_back(&allNodes.front());
 
-  pathNode *q;           // q is the current node
-  bool atGoal = false;
+  pathNode *q;           // q points to the current node
   uint64_t openListCounter;
   while(!openList.empty()) {
     // check cost of all nodes in open list and get lowest cost
     q = openList.front();
+    std::cout << "Open List contains tree node IDs" << std::endl;
     for(auto& it : openList) {
+      std::cout << it->id << " ";
       it->f = it->g + it->h;
       if(it->f < q->f) {
-        q = it;           // qNext points to pathNode with lower cost
+        q = it;           // q points to pathNode with lower cost
       }
     } // end for each iterator in openList
 
+    std::cout << std::endl << "Tree node with lowest cost = " << q->id << std::endl;
+
     // Check if reached goal node
     if(q->treePoint.goalNode) {
-      atGoal = true;
-      // Add in stuff here, qNext holds goal node
+      // Add in stuff here, q holds goal node
       std::cout << "Path found" << std::endl;
+      std::cout << "Node ID of goal = " << q->treePoint.id << std::endl;
+      std::cout << "Node location of goal = " << std::endl << q->treePoint.location_m << std::endl;
+      std::cout << "Parent of goal = " << q->parent << std::endl;
       running = false;
       return;
     }
 
-    std::cout << "Open List size before erase = " << openList.size() << std::endl;
-    std::cout << "Will remove iterator " << q->openListID << " elements down in the list" << std::endl;
     // remove current from open list
+    std::cout << "removing node " << q->id << " from open list" << std::endl;
+    std::cout << "It has openListId " << q->openListID << " in list size of " << openList.size() << std::endl;
+    std::cout << "All nodes in open list are" << std::endl;
+    for(auto it : openList) {
+      std::cout << it->id << " " << std::endl;
+    }
     openList.erase(openList.begin() + (int) q->openListID);
     q->inOpenList = false;
     q->openListID = 0;
-    std::cout << "Open List size = " << openList.size() << std::endl;
-    std::cout << "Removed Current node_" << q->treePoint.id << " from open list" << std::endl;
+    std::cout << "Ids in open list are " << std::endl;
+    for(auto it : openList) {
+      if(it->id == q->id) {
+        std::cout << "Node " << q->id << " should have been removed from list" << std::endl;
+        exit(0);
+      }
+      std::cout << it->id << " ";
+    }
 
+    std::cout << std::endl << "Fixed open list ids in open list are " << std::endl;
     // fix ids in openList
     if(!openList.empty()) {
       openListCounter = 0;
       for(auto it : openList) {
-//        allNodes.at(it->treePoint.id).id = openListCounter;
-        it->id = openListCounter;
+        it->openListID = openListCounter;
+        std::cout << it->openListID << " ";
         openListCounter++;
       }
     }
 
-    std::cout << "Adding current node_" << q->treePoint.id << " to closed list" << std::endl;
     // add current to closed list
+    std::cout << std::endl <<  "Adding node " << q->id << " to closed list" << std::endl;
     q->inClosedList = true;
     q->closedListID = closedList.size();
     closedList.emplace_back(q);
-    std::cout << "Added current node_" << q->treePoint.id << " to closed list" << std::endl;
 
     initNeighborCosts(*q);
     // Look at all neighbors in current node
