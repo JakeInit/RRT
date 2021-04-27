@@ -103,7 +103,7 @@ rapidRandomTree::~rapidRandomTree() {
 }
 
 void rapidRandomTree::growTreeTowardsRandom() {
-  vector2f1 randomPoint, newPoint;
+  vector2f1 randomPoint, newPoint, pointToKeep;
   bool randomPointCollison;
   bool robotoCollision = true;
   uint64_t neighbor;
@@ -126,9 +126,28 @@ void rapidRandomTree::growTreeTowardsRandom() {
     // Grow tree from closest neighbor towards random point by distance epsilon
     newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, maxStepDistance_m);
 
-    // Check collision detector of new point
-    robotoCollision = collisionDetection(newPoint);
+    // Verify no collision from neighbor location to new point location
+    int stepSize = (int) (maxStepDistance_m/robotRadius);
+    if(stepSize > 0) {
+      for (int i = stepSize; i > 0; i--) {
+        float distance = maxStepDistance_m / ((float) i);
+        auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
+
+        // Check if robot will collide at subpoint
+        if (!collisionDetection(subPoint)) {
+          pointToKeep = subPoint;
+          robotoCollision = false;
+        } else {
+          break;    // Will use last point to Keep
+        }
+      }
+    } else {
+      pointToKeep = newPoint;
+      robotoCollision = collisionDetection(newPoint);
+    }
   }
+
+  newPoint = pointToKeep;
 
   // Set node of neighbor for access
   setConnectingNeighbor(tree.at(neighbor));           // graph will use neighbor location as vertex
@@ -140,7 +159,7 @@ void rapidRandomTree::growTreeTowardsRandom() {
 }
 
 void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
-  vector2f1 newPoint;
+  vector2f1 newPoint, pointToKeep;
 
   // Find closest neighbor
   auto neighbor = findClosestNeighbor(setPt, tree);
@@ -162,10 +181,32 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   // Grow tree from closest neighbor towards point by distance epsilon
   newPoint = projectToPointOnLine(tree.at(neighbor).location_m, setPt, maxStepDistance_m);
 
-  // Check collision detector
-  if(collisionDetection(newPoint)) {
-    return;                                   // return without adding new point to tree
+  bool robotoCollision = true;
+  // Verify no collision from neighbor location to new point location
+  int stepSize = (int) (maxStepDistance_m/robotRadius);
+  if(stepSize > 0) {
+    for (int i = stepSize; i > 0; i--) {
+      float distance = maxStepDistance_m / ((float) i);
+      auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
+
+      // Check if robot will collide at subpoint
+      if (!collisionDetection(subPoint)) {
+        pointToKeep = subPoint;
+        robotoCollision = false;
+      } else {
+        break;    // Will use last point to Keep, or may not be able to extend tree if robotCollision is true
+      }
+    }
+  } else {
+    pointToKeep = newPoint;
+    robotoCollision = collisionDetection(newPoint);
   }
+
+  if(robotoCollision) {
+    return;                     // return without adding new point to tree
+  }
+  newPoint = pointToKeep;
+
 
   // Store neighbor connecting to new point
   setConnectingNeighbor(tree.at(neighbor));   // On Graph will connect new point to this neighbor node

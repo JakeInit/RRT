@@ -4,14 +4,14 @@
     "maxNodes": 1000,
     "visualizerHeight_pix": 800,
     "visualizerWidth_pix": 800,
-    "stepDistance_m": 0.250,
+    "stepDistance_m": 0.200,
     "boundaryHeight_m": 5.000,
     "boundaryWidth_m": 5.000,
     "maxObjects": 6,
     "maxObjectSize_m": 2.000
   },
   "robot": {
-    "width_m": 0.50,
-    "height_m": 0.50
+    "width_m": 0.30,
+    "height_m": 0.30
   }
 }
