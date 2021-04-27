@@ -27,6 +27,7 @@ std::unique_ptr<rrt::rapidRandomTree> qGoal = nullptr;
 std::unique_ptr<sf::RenderWindow> window = nullptr;
 
 void watchWindow();
+void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2, sf::Color color);
 
 int main(int argc, char** argv) {
   rrt::system::timerEvent timer;
@@ -40,28 +41,38 @@ int main(int argc, char** argv) {
       continue;
     }
 
-    // Grow the trees until they connect
-    if(!qGoal->goalReached()) {
+    if(!qGoal->goalReached()) {                                                 // Grow the trees until they connect
       // Grow the starting tree
       qInit->growTreeTowardsRandom();
       rrt::vector2f1 newStartTreePoint = qInit->getCoordinateOfLastNode();      // newStartTree point is newest point
       rrt::vector2f1 neighborNode = qInit->getConnectingNeighbor().location_m;  // location of last neighbor
-      updateWindow(newStartTreePoint, neighborNode);                            // Connect the 2 points
+      updateWindow(newStartTreePoint, neighborNode, sf::Color::Red);            // Connect the 2 points
 
       // Grow the goal tree
       qGoal->growTreeTowardsPoint(newStartTreePoint);
       if (!qGoal->goalReached()) {
         rrt::vector2f1 lastPoint = qGoal->getCoordinateOfLastNode();  // location of newest point in tree
         neighborNode = qGoal->getConnectingNeighbor().location_m;     // location of last neighbor
-        updateWindow(lastPoint, neighborNode);                        // Connect the 2 points
+        updateWindow(lastPoint, neighborNode, sf::Color::Red);        // Connect the 2 points
         incrementCounter();
       } else {                                                        // new point from start connects to goal
-        updateWindow(newStartTreePoint, qGoal->getConnectingNeighbor().location_m);
+        updateWindow(newStartTreePoint, qGoal->getConnectingNeighbor().location_m, sf::Color::Red);
       }
-    } else if (pathMap.empty()) {
+    } else if (pathMap.empty()) {                                     // merge the two RRTs
       mergeTrees();
-    } else {
-      findPath();
+    } else if (!pathCreated) {                                        // Determine path from start to goal
+      aStar();
+    } else {                                                          // Visualize new path
+      static uint64_t index = 0;
+      auto pt1 = pathToGoal_m.at(index);
+      auto pt2 = pathToGoal_m.at(index + 1);
+      updateWindow(pt1, pt2, sf::Color::Green);
+
+      if(index == pathToGoal_m.size() - 2) {
+        running = false;
+      } else {
+        index++;
+      }
     }
   } // end run
 
@@ -71,6 +82,7 @@ int main(int argc, char** argv) {
 
 void mainspace::initialize() {
   running = true;
+  pathCreated = false;
   signal(SIGINT, mainspace::signalHandler);
 
   configReader = rrt::system::jsonParser::getInstance();
@@ -143,19 +155,18 @@ void mainspace::signalHandler(int signum) {
   std::cout << "\nClose Visualizer Window to finish closing down the application" << std::endl;
 }
 
-void mainspace::updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
-    // create an array of 3 vertices that define a triangle primitive
-  sf::VertexArray border1(sf::LineStrip, 2);
+void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2, const sf::Color color) {
+  sf::VertexArray line(sf::LineStrip, 2);
   pt1 = convertPointToWindow(pt1);
   pt2 = convertPointToWindow(pt2);
 
-  // define the position of the triangle's points
-  border1[0].position = sf::Vector2f(pt1.x(), pt1.y());
-  border1[1].position = sf::Vector2f(pt2.x(), pt2.y());
+  // define the vertices of the line
+  line[0].position = sf::Vector2f(pt1.x(), pt1.y());
+  line[1].position = sf::Vector2f(pt2.x(), pt2.y());
 
-  // define the color of the triangle's points
-  border1[0].color = sf::Color::Red;
-  border1[1].color = sf::Color::Red;
+  // define the color of the line's points
+  line[0].color = color;
+  line[1].color = color;
 
   if(window->isOpen()) {
     // check all the window's events that were triggered since the last iteration of the loop
@@ -166,16 +177,10 @@ void mainspace::updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2) {
         window->close();
     }
 
-//    // clear the window with black color
-//    static bool windowCleared = false;
-//    if(!windowCleared) {
-//      window->clear(sf::Color::Black);
-//      windowCleared = true;
-//    }
+//    window->clear(sf::Color::Black);
 
     // draw everything here...
-//    window->draw(line);
-    window->draw(border1);
+    window->draw(line);
 
     // end the current frame
     window->display();
@@ -320,7 +325,7 @@ void mainspace::incrementCounter() {
   }
 }
 
-void mainspace::findPath() {
+void mainspace::aStar() {
   std::cout << "\n" << std::endl;
   std::vector<pathNode*> openList;
   std::vector<pathNode*> closedList;
@@ -361,7 +366,7 @@ void mainspace::findPath() {
       std::cout << "Node ID of goal = " << q->treePoint.id << std::endl;
       std::cout << "Node location of goal = " << std::endl << q->treePoint.location_m << std::endl;
       std::cout << "Parent of goal = " << q->parent << std::endl;
-      running = false;
+      createPath(*q);
       return;
     }
 
@@ -416,6 +421,29 @@ void mainspace::initNeighborCosts(pathNode& parentNode) {
                                                                             allNodes.at(neighbor).treePoint.location_m);
     allNodes.at(neighbor).parent = parentNode.id;
   }
+}
+
+void mainspace::createPath(pathNode& goalNode) {
+  pathNode nextNode = goalNode;
+  pathToGoal_m.clear();
+  pathCreated = false;
+  counter = 0;
+  while(!pathCreated) {
+    pathToGoal_m.emplace(pathToGoal_m.begin(), allNodes.at(nextNode.id).treePoint.location_m);
+    if(nextNode.id == 0) {
+      pathCreated = true;
+    } else {
+      nextNode = allNodes.at(nextNode.parent);
+      counter++;
+    }
+
+    if(counter > maxNodes) {
+      std::cout << "Could not create a path from RRT" << std::endl;
+      running = false;
+      return;
+    }
+  }
+  std::cout << "Path has been Constructed" << std::endl;
 }
 
 mainspace::pathNode::pathNode() {

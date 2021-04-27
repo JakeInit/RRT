@@ -29,16 +29,17 @@ void shutdown();
 void signalHandler(int signum);
 void incrementCounter();
 
-void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2);
 void placeObjectInMap(const rrt::objectNode& objectInMap);
 void placeRobotInMap(const rrt::objectNode& robotInMap);
 void placeGoalPointOnMap(rrt::vector2f1& goalPt);
 void mergeTrees();
-void findPath();
+void aStar();
+void createPath(pathNode& goalNode);
 void initNeighborCosts(pathNode& parentNode);
 rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 static bool running = false;
+static bool pathCreated = false;
 static rrt::system::jsonParser* configReader = nullptr;
 static uint64_t windowHeight_pix;
 static uint64_t windowWidth_pix;
@@ -51,6 +52,7 @@ static float loopTime_ms;
 static double startTime;
 static std::vector<rrt::node> pathMap;
 static std::vector<pathNode> allNodes;
+static std::vector<rrt::vector2f1> pathToGoal_m;
 
 uint16_t counter;
 
