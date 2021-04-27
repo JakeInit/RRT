@@ -308,20 +308,6 @@ void mainspace::mergeTrees() {
   // Create the map of possible paths for the robot in the environment
   pathMap = startTree;
   pathMap.insert(pathMap.end(), goalTree.begin(), goalTree.end());
-
-  for(auto it : pathMap) {
-    std::cout << std::endl << "Neighbors at node " << it.id << " are:" << std::endl;
-    for(auto it2 : it.neighbors) {
-      std::cout << it2 << " ";
-    }
-    if(it.goalNode) {
-      std::cout << "No neighbors since it is the goal node" << std::endl;
-    }
-  }
-
-  std::cout << std::endl << "Number of nodes in start tree = " << startTree.size() << std::endl;
-  std::cout << "Number of nodes in goal tree = " << goalTree.size() << std::endl;
-  std::cout << "Number of nodes in path = " << pathMap.size() << std::endl;
 }
 
 void mainspace::incrementCounter() {
@@ -361,16 +347,12 @@ void mainspace::findPath() {
   while(!openList.empty()) {
     // check cost of all nodes in open list and get lowest cost
     q = openList.front();
-    std::cout << "Open List contains tree node IDs" << std::endl;
     for(auto& it : openList) {
-      std::cout << it->id << " ";
       it->f = it->g + it->h;
       if(it->f < q->f) {
         q = it;           // q points to pathNode with lower cost
       }
     } // end for each iterator in openList
-
-    std::cout << std::endl << "Tree node with lowest cost = " << q->id << std::endl;
 
     // Check if reached goal node
     if(q->treePoint.goalNode) {
@@ -384,68 +366,43 @@ void mainspace::findPath() {
     }
 
     // remove current from open list
-    std::cout << "removing node " << q->id << " from open list" << std::endl;
-    std::cout << "It has openListId " << q->openListID << " in list size of " << openList.size() << std::endl;
-    std::cout << "All nodes in open list are" << std::endl;
-    for(auto it : openList) {
-      std::cout << it->id << " " << std::endl;
-    }
     openList.erase(openList.begin() + (int) q->openListID);
     q->inOpenList = false;
     q->openListID = 0;
-    std::cout << "Ids in open list are " << std::endl;
-    for(auto it : openList) {
-      if(it->id == q->id) {
-        std::cout << "Node " << q->id << " should have been removed from list" << std::endl;
-        exit(0);
-      }
-      std::cout << it->id << " ";
-    }
 
-    std::cout << std::endl << "Fixed open list ids in open list are " << std::endl;
     // fix ids in openList
     if(!openList.empty()) {
       openListCounter = 0;
       for(auto it : openList) {
         it->openListID = openListCounter;
-        std::cout << it->openListID << " ";
         openListCounter++;
       }
     }
 
     // add current to closed list
-    std::cout << std::endl <<  "Adding node " << q->id << " to closed list" << std::endl;
     q->inClosedList = true;
     q->closedListID = closedList.size();
     closedList.emplace_back(q);
 
     initNeighborCosts(*q);
     // Look at all neighbors in current node
-    std::cout << "Number of neighbors to treePoint_" << q->treePoint.id << " = " << q->treePoint.neighbors.size() << std::endl;
     for(auto neighbor : q->treePoint.neighbors) {
       // Check if neighbor is in closed list
       if(!allNodes.at(neighbor).inClosedList) {
-        std::cout << "neighbor " << neighbor << " not in closed list" << std::endl;
         allNodes.at(neighbor).f = allNodes.at(neighbor).g + allNodes.at(neighbor).h;
         // Check if neighbor in open list
         if(!allNodes.at(neighbor).inOpenList) {                 // Not in open list
-          std::cout << "neighbor " << neighbor << " not in open list" << std::endl;
           allNodes.at(neighbor).inOpenList = true;
           allNodes.at(neighbor).openListID = openList.size();
           openList.emplace_back(&allNodes.at(neighbor));        // Place neighbor in open list
         } else {                                                // In open list
-          std::cout << "Open list size = " << openList.size() << std::endl;
-          std::cout << "neighbor open list id of neighbor = " << allNodes.at(neighbor).openListID << std::endl;
           if(allNodes.at(neighbor).g < openList.at(allNodes.at(neighbor).openListID)->g) {
-            std::cout << "test 3" << std::endl;
             openList.at(allNodes.at(neighbor).openListID)->g = allNodes.at(neighbor).g;  // Set new cost
             openList.at(allNodes.at(neighbor).openListID)->parent = q->id;               // Set new parent
           }
         }
       } // end not in closed list
     } // end loop through all neighbors of q (current node)
-
-    std::cout << "Open List size at end of while = " << openList.size() << std::endl;
   } // end while open list not empty
 
   std::cout << "No path could be found" << std::endl;
