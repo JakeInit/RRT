@@ -121,10 +121,10 @@ void rapidRandomTree::growTreeTowardsRandom() {
     }
 
     // Find index of closest neighbor
-    neighbor = findClosestNeighbor(randomPoint);
+    neighbor = findClosestNeighbor(randomPoint, tree);
 
     // Grow tree from closest neighbor towards random point by distance epsilon
-    newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint);
+    newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, maxStepDistance_m);
 
     // Check collision detector of new point
     robotoCollision = collisionDetection(newPoint);
@@ -143,7 +143,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   vector2f1 newPoint;
 
   // Find closest neighbor
-  auto neighbor = findClosestNeighbor(setPt);
+  auto neighbor = findClosestNeighbor(setPt, tree);
 
   // Check if setPt can connect to nearest neighbor or neighbor segment
   if(connectToNeighborSegment(setPt, neighbor)) {
@@ -160,7 +160,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   }
 
   // Grow tree from closest neighbor towards point by distance epsilon
-  newPoint = projectToPointOnLine(tree.at(neighbor).location_m, setPt);
+  newPoint = projectToPointOnLine(tree.at(neighbor).location_m, setPt, maxStepDistance_m);
 
   // Check collision detector
   if(collisionDetection(newPoint)) {
@@ -187,14 +187,14 @@ node rapidRandomTree::createNode(vector2f1 newPt) {
   return newNode;
 }
 
-uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
-  if(tree.empty()) {
+uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt, const std::vector<node>& searchTree) {
+  if(searchTree.empty()) {
     std::cout << "Tree is empty. This value is invalid" << std::endl;
     exit(0);
   }
 
   std::vector<float> distances;
-  for(const auto& it : tree) {
+  for(const auto& it : searchTree) {
     distances.emplace_back(distance(it.location_m, randomPt));
   }
 
@@ -204,7 +204,7 @@ uint64_t rapidRandomTree::findClosestNeighbor(const vector2f1& randomPt) {
   return index;
 }
 
-vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& endPt) {
+vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, float distanceToProject_m) {
   vector2f1 newPoint;
   float x;
   float y;
@@ -215,12 +215,12 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
   if(dx == 0.f) {                         // Means we are on a vertical line
     x = endPt.x();
     if(dy > 0) {
-      y = startPt.y() + maxStepDistance_m;
+      y = startPt.y() + distanceToProject_m;
       if(y > endPt.y()) {                 // Do not want to set new point past endpoint
         y = endPt.y();
       }
     } else {
-      y = startPt.y() - maxStepDistance_m;
+      y = startPt.y() - distanceToProject_m;
       if(y < endPt.y()) {                 // Do not want to set new point past endpoint
         y = endPt.y();
       }
@@ -231,12 +231,12 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
   } else if(dy == 0.f) {                  // Means we are on a horizontal line
     y = endPt.y();
     if(dx > 0) {
-      x = startPt[0] + maxStepDistance_m;
+      x = startPt[0] + distanceToProject_m;
       if(x > endPt.x()) {                 // Do not want to set new point past endpoint
         x = endPt.x();
       }
     } else {
-      x = startPt.x() - maxStepDistance_m;
+      x = startPt.x() - distanceToProject_m;
       if(x < endPt.x()) {                 // Do not want to set new point past endpoint
         x = endPt.x();
       }
@@ -250,14 +250,14 @@ vector2f1 rapidRandomTree::projectToPointOnLine(vector2f1& startPt, vector2f1& e
   float SLOPE = dy/dx;
 
   // determine if epsilon goes past Goal point
-  double distanceFromEnd = MAG - maxStepDistance_m;
+  double distanceFromEnd = MAG - distanceToProject_m;
   if(distanceFromEnd > 0) {               // goal point not past end point
     double b = startPt[1] - SLOPE*startPt[0];
     // Use dist formula with goal.Y subbed in to get goal.X
     double c = b - startPt[1];
     double A = pow(SLOPE,2) + 1;
     double B = 2*c*SLOPE - 2*startPt[0];
-    double C = pow(c,2) + pow(startPt[0],2) - pow(maxStepDistance_m,2);
+    double C = pow(c,2) + pow(startPt[0],2) - pow(distanceToProject_m,2);
     // determine points based on quadratic formula
     double Xg1 = (-B + sqrt(pow(B,2) - 4*A*C))/(2*A);
     double Xg2 = (-B - sqrt(pow(B,2) - 4*A*C))/(2*A);
@@ -532,14 +532,6 @@ vector2f1 rapidRandomTree::getTreeStart() {
   }
 
   return tree.front().location_m;
-}
-
-uint64_t rapidRandomTree::getIdOfLastPoint() {
-  if(tree.empty()) {
-    std::cout << "Returning invalid tree id" << std::endl;
-    return UINTMAX_MAX;
-  }
-  return tree.back().id;
 }
 
 void rapidRandomTree::setConnectingNeighbor(node& leaf) {

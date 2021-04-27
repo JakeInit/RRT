@@ -55,23 +55,27 @@ public:
    */
   void growTreeTowardsPoint(vector2f1& setPt);
 
-  bool goalReached() const {return reachedGoalPoint;}
   static float distance(vector2f1 p1, vector2f1 p2);
   static float get_random(float lowerBound, float upperBound);
-  uint64_t getIdOfLastPoint();
+  static uint64_t findClosestNeighbor(const vector2f1& randomPt, const std::vector<node>& searchTree);
+  static vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, float distanceToProject);
+  static vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
+
+  // Get functions of object class variables that are read only
+  bool goalReached() const {return reachedGoalPoint;}
   vector2f1 getCoordinateOfLastNode() const {return lastNodeCoordinate;}
   vector2f1 getTreeStart();
   std::vector<node> getTree() const {return tree;}
   node getConnectingNeighbor() const {return connectingNeighbor;}
+  objectNode getRobotModel() const {return robotInMap;}
   std::vector<objectNode> getObjects() const {return objectInMap;}
   std::vector<objectNode> getBorderWalls() const {return border;}
   std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> getObjectAndTransform() const {return objects;}
   std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> getWallsAndTransform() const {return walls;}
-  objectNode getRobotModel() const {return robotInMap;}
+  std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f> getRobotAndTransform() const {return robotModel;}
 
 private:
   node createNode(vector2f1 newPt);
-  uint64_t findClosestNeighbor(const vector2f1& randomPt);
   void setUpRobotModel();
   void setWalls();
   void placeRobotInMap();
@@ -79,8 +83,6 @@ private:
   bool collisionDetection(const vector2f1& point);
   bool newObstacleCollisionDetection(objectNode& newObject);
   void setConnectingNeighbor(node& leaf);
-  vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt);
-  vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
   bool connectToNeighborSegment(vector2f1& queryPt, uint64_t neighbor);
 
   node connectingNeighbor;
@@ -89,9 +91,10 @@ private:
 
   std::string treeName;
   std::vector<node> tree;
+
+  objectNode robotInMap;
   std::vector<objectNode> border;
   std::vector<objectNode> objectInMap;
-  objectNode robotInMap;
 
   float maxStepDistance_m;
   float boundaryWidth_m;
