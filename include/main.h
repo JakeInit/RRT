@@ -36,6 +36,7 @@ void mergeTrees();
 void aStar();
 void createPath(pathNode& goalNode);
 void initNeighborCosts(pathNode& parentNode);
+void smoothPath();
 rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 static bool running = false;

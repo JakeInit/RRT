@@ -61,6 +61,10 @@ public:
   static vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, float distanceToProject);
   static vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
   static bool lineIntersection(vector2f1& intersectPt, rrt::vector2f1 A, rrt::vector2f1 B, rrt::vector2f1 C, rrt::vector2f1 D, float step_m);
+  static bool collisionDetection(const vector2f1& point,
+                                 std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>  robotModel,
+                                 std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> objects,
+                                 std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> walls);
 
   void setOtherTree(const std::vector<node>& otherTree_) {otherTree = otherTree_;}
 
@@ -83,7 +87,6 @@ private:
   void setWalls();
   void placeRobotInMap();
   void setUpObjects();
-  bool collisionDetection(const vector2f1& point);
   bool newObstacleCollisionDetection(objectNode& newObject);
   void setConnectingNeighbor(node& leaf);
   bool connectToNeighborSegment(vector2f1& queryPt, uint64_t neighbor);

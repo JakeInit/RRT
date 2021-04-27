@@ -63,6 +63,8 @@ int main(int argc, char** argv) {
       mergeTrees();
     } else if (!pathCreated) {                                        // Determine path from start to goal
       aStar();
+      std::cout << std::endl << "Running Greedy Path Smoother" << std::endl;
+      smoothPath();
     } else {                                                          // Visualize new path
       static uint64_t index = 0;
       auto pt1 = pathToGoal_m.at(index);
@@ -455,6 +457,60 @@ void mainspace::createPath(pathNode& goalNode) {
   }
   std::cout << "Path has been Constructed" << std::endl;
 }
+
+void mainspace::smoothPath() {
+  std::vector<rrt::vector2f1> smoothedPath_m, editablePath_m;
+  rrt::vector2f1 locationToConsider_m;
+  editablePath_m = pathToGoal_m;
+  bool collision;
+
+  // Init with start node
+  smoothedPath_m.emplace_back(pathToGoal_m.front());
+
+  bool pathSmoothed = false;
+  while (!pathSmoothed) {
+    // Implement greedy search method
+    // On successful connection of node, add node to path
+    locationToConsider_m = editablePath_m.front();
+    for (uint64_t it = editablePath_m.size() - 1; it > 0; it--) {
+      auto greedyPoint = editablePath_m.at(it);
+      auto distanceBetweenNodes = rrt::rapidRandomTree::distance(locationToConsider_m, greedyPoint);
+      // Check if collision to point
+      int stepSize = (int) (distanceBetweenNodes / robotHeight_m);
+      collision = false;
+      if (stepSize > 0) {
+        for (int i = stepSize; i > 0; i--) {
+          float distance = distanceBetweenNodes / ((float) i);
+          auto subPoint = rrt::rapidRandomTree::projectToPointOnLine(locationToConsider_m, greedyPoint, distance);
+          if (rrt::rapidRandomTree::collisionDetection(subPoint, qInit->getRobotAndTransform(),
+                                                       qInit->getObjectAndTransform(),
+                                                       qInit->getWallsAndTransform())) {
+            collision = true;
+          }
+        }
+      } else {
+        if (rrt::rapidRandomTree::collisionDetection(greedyPoint, qInit->getRobotAndTransform(),
+                                                      qInit->getObjectAndTransform(),
+                                                      qInit->getWallsAndTransform())) {
+          collision = true;
+        }
+      }
+
+      if (!collision) {
+        smoothedPath_m.emplace_back(greedyPoint);
+        if(greedyPoint == pathToGoal_m.back()) {
+          pathSmoothed = true;
+          break;
+        }
+        editablePath_m.erase(editablePath_m.begin() + it - 1);
+        break;
+      }
+    } // end looping path
+  } // end while path has not been smoothed
+
+  pathToGoal_m.clear();
+  pathToGoal_m = smoothedPath_m;
+} // end smooth path
 
 mainspace::pathNode::pathNode() {
   f = 0;

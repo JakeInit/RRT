@@ -76,7 +76,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
   while(collision) {
     startPt.x() = get_random(-boundaryWidth_m, boundaryWidth_m);
     startPt.y() = get_random(-boundaryHeight_m, boundaryHeight_m);
-    collision = collisionDetection(startPt);
+    collision = collisionDetection(startPt, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
   }
 
   initPoint = startPt ;
@@ -117,7 +117,7 @@ void rapidRandomTree::growTreeTowardsRandom() {
       randomPoint.y() = get_random(-boundaryHeight_m + robotRadius/2, boundaryHeight_m - robotRadius/2);
 
       // Check collision detector of random point
-      randomPointCollison = collisionDetection(randomPoint);
+      randomPointCollison = collisionDetection(randomPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
     }
 
     // Find index of closest neighbor
@@ -137,7 +137,7 @@ void rapidRandomTree::growTreeTowardsRandom() {
         auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
 
         // Check if robot will collide at subpoint
-        if (!collisionDetection(subPoint)) {
+        if (!collisionDetection(subPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform())) {
           pointToKeep = subPoint;
           robotoCollision = false;
         } else {
@@ -146,7 +146,7 @@ void rapidRandomTree::growTreeTowardsRandom() {
       }
     } else {
       pointToKeep = newPoint;
-      robotoCollision = collisionDetection(newPoint);
+      robotoCollision = collisionDetection(newPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
     }
   }
 
@@ -193,7 +193,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
       auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
 
       // Check if robot will collide at subpoint
-      if (!collisionDetection(subPoint)) {
+      if (!collisionDetection(subPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform())) {
         pointToKeep = subPoint;
         robotoCollision = false;
       } else {
@@ -202,7 +202,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
     }
   } else {
     pointToKeep = newPoint;
-    robotoCollision = collisionDetection(newPoint);
+    robotoCollision = collisionDetection(newPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
   }
 
   if(robotoCollision) {
@@ -494,7 +494,10 @@ void rapidRandomTree::setUpObjects() {
   }
 }
 
-bool rapidRandomTree::collisionDetection(const vector2f1& point) {
+bool rapidRandomTree::collisionDetection(const vector2f1& point,
+                                         std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>  robotModel,
+                                         std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> objects,
+                                         std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> walls) {
   CollisionRequestf request;
   CollisionResultf result;
 
