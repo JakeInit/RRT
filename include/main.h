@@ -29,7 +29,7 @@ void shutdown();
 void signalHandler(int signum);
 void incrementCounter();
 
-void placeObjectInMap(const rrt::objectNode& objectInMap);
+void placeObjectInMap(const rrt::objectNode& objectInMap, const std::string& objectName);
 void placeRobotInMap(const rrt::objectNode& robotInMap);
 void placeGoalPointOnMap(rrt::vector2f1& goalPt);
 void mergeTrees();

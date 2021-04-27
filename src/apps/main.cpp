@@ -76,6 +76,8 @@ int main(int argc, char** argv) {
     }
   } // end run
 
+  std::cout << std::endl << "Exited the running loop. Close visualizer to terminate application" << std::endl;
+
   shutdown();
   return 0;
 }
@@ -106,7 +108,14 @@ void mainspace::initialize() {
   auto objects = qInit->getObjects();
   if(!objects.empty()) {
     for(const auto& it : objects) {
-      placeObjectInMap(it);
+      placeObjectInMap(it, "obstacle");
+    }
+  }
+
+  auto walls = qInit->getBorderWalls();
+  if(!walls.empty()) {
+    for(const auto& it : walls) {
+      placeObjectInMap(it, "wall");
     }
   }
 
@@ -187,7 +196,7 @@ void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2, const sf::Color color)
   }
 }
 
-void mainspace::placeObjectInMap(const rrt::objectNode& objectInMap) {
+void mainspace::placeObjectInMap(const rrt::objectNode& objectInMap, const std::string& objectName) {
   sf::RectangleShape object(sf::Vector2f(0, 0));
   object.setSize(sf::Vector2f(objectInMap.width/windowResolution,
                               objectInMap.height/windowResolution));
@@ -207,7 +216,7 @@ void mainspace::placeObjectInMap(const rrt::objectNode& objectInMap) {
     }
 
     // draw everything here...
-    std::cout << "Drawing Object " << objectInMap.objectId << std::endl;
+    std::cout << "Drawing " << objectName << " " << objectInMap.objectId << std::endl;
     window->draw(object);
 
     // end the current frame

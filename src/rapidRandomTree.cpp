@@ -50,8 +50,8 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
   numberOfObjects = configReader->parametersForSystem.maxObjects;
 
   setUpRobotModel();
-  setWalls();
   if(otherTree == nullptr) {     // other Tree will set up objects if not nullptr
+    setWalls();
     setUpObjects();
   } else {
     objects = otherTree->getObjectAndTransform();
@@ -59,6 +59,14 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
       std::cout << "There are no objects" << std::endl;
     } else {
       std::cout << "Objects copied from other tree" << std::endl;
+      objectInMap = otherTree->getObjects();
+    }
+
+    walls = otherTree->getWallsAndTransform();
+    if(walls.empty()) {
+      std::cout << "There are no walls" << std::endl;
+    } else {
+      std::cout << "Walls copied from other tree" << std::endl;
       objectInMap = otherTree->getObjects();
     }
   }
@@ -343,6 +351,8 @@ void rapidRandomTree::setUpRobotModel() {
 void rapidRandomTree::setWalls() {
   std::pair<std::shared_ptr<Boxf>, Transform3f> wall;
   objectNode newObject;
+  border.clear();
+  walls.clear();
   Transform3f tf;
   tf.setIdentity();
   tf.translation().z() = 0;
@@ -350,29 +360,53 @@ void rapidRandomTree::setWalls() {
   tf.rotation().eulerAngles(0, 1, 2)[1] = 0;
   tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
 
-  tf.translation().x() = boundaryWidth_m + 0.050f;
-  tf.translation().y() = 0;
-  std::shared_ptr<Boxf> wall1(new Boxf(0.10, boundaryHeight_m, 0));
+  // Wall1
+  newObject.location_m.x() = boundaryWidth_m + 0.050f;
+  newObject.location_m.y() = 0;
+  newObject.width = 0.12;
+  newObject.height = 2*boundaryHeight_m;
+  newObject.objectId = border.size();
+  tf.translation().x() = newObject.location_m.x();
+  tf.translation().y() = newObject.location_m.y() = 0;
+  std::shared_ptr<Boxf> wall1(new Boxf(newObject.width, newObject.height, 0));
   wall = {wall1, tf};
   walls.emplace_back(wall);
+  border.emplace_back(newObject);
 
-  tf.translation().x() = -boundaryWidth_m - 0.050f;
-  tf.translation().y() = 0;
-  std::shared_ptr<Boxf> wall2(new Boxf(0.10, boundaryHeight_m, 0));
+  // Wall2
+  newObject.location_m.x() = -boundaryWidth_m - 0.050f;
+  newObject.location_m.y() = 0;
+  newObject.objectId = border.size();
+  tf.translation().x() = newObject.location_m.x();
+  tf.translation().y() = newObject.location_m.y();
+  std::shared_ptr<Boxf> wall2(new Boxf(newObject.width, newObject.height, 0));
   wall = {wall2, tf};
   walls.emplace_back(wall);
+  border.emplace_back(newObject);
 
-  tf.translation().x() = 0;
-  tf.translation().y() = -boundaryHeight_m - 0.050f;
-  std::shared_ptr<Boxf> wall3(new Boxf(boundaryWidth_m, 0.10, 0));
+  // Wall3
+  newObject.location_m.x() = 0;
+  newObject.location_m.y() = -boundaryHeight_m - 0.050f;
+  newObject.width = 2*boundaryWidth_m;
+  newObject.height = 0.12;
+  newObject.objectId = border.size();
+  tf.translation().x() = newObject.location_m.x();
+  tf.translation().y() = newObject.location_m.y();
+  std::shared_ptr<Boxf> wall3(new Boxf(newObject.width, newObject.height, 0));
   wall = {wall3, tf};
   walls.emplace_back(wall);
+  border.emplace_back(newObject);
 
-  tf.translation().x() = 0;
-  tf.translation().y() = boundaryHeight_m + 0.050f;
-  std::shared_ptr<Boxf> wall4(new Boxf(boundaryWidth_m, 0.10, 0));
+  // Wall4
+  newObject.location_m.x() = 0;
+  newObject.location_m.y() = boundaryHeight_m + 0.050f;
+  newObject.objectId = border.size();
+  tf.translation().x() = newObject.location_m.x();
+  tf.translation().y() = newObject.location_m.y();
+  std::shared_ptr<Boxf> wall4(new Boxf(newObject.width, newObject.height, 0));
   wall = {wall4, tf};
   walls.emplace_back(wall);
+  border.emplace_back(newObject);
 }
 
 void rapidRandomTree::placeRobotInMap() {

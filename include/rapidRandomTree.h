@@ -64,7 +64,9 @@ public:
   std::vector<node> getTree() const {return tree;}
   node getConnectingNeighbor() const {return connectingNeighbor;}
   std::vector<objectNode> getObjects() const {return objectInMap;}
+  std::vector<objectNode> getBorderWalls() const {return border;}
   std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> getObjectAndTransform() const {return objects;}
+  std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> getWallsAndTransform() const {return walls;}
   objectNode getRobotModel() const {return robotInMap;}
 
 private:
@@ -87,6 +89,7 @@ private:
 
   std::string treeName;
   std::vector<node> tree;
+  std::vector<objectNode> border;
   std::vector<objectNode> objectInMap;
   objectNode robotInMap;
 
