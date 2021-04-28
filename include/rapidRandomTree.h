@@ -23,6 +23,7 @@ struct node {
   bool goalNode;
   vector2f1 location_m;
   uint64_t id;
+  uint64_t parent;
   std::vector<uint64_t> neighbors;
   node();
 };
@@ -58,7 +59,7 @@ public:
 
   static float distance(vector2f1 p1, vector2f1 p2);
   static float get_random(float lowerBound, float upperBound);
-  static uint64_t findClosestNeighbor(const vector2f1& randomPt, const std::vector<node>& searchTree);
+  static uint64_t findClosestNeighbor(const vector2f1& queryPt, const std::vector<node>& searchTree);
   static vector2f1 projectToPointOnLine(vector2f1& startPt, vector2f1& endPt, float distanceToProject);
   static vector2f1 closestPointOnSegment(vector2f1& startPt, vector2f1& endPt, vector2f1& queryPt);
   static bool lineIntersection(vector2f1& intersectPt, rrt::vector2f1 A, rrt::vector2f1 B, rrt::vector2f1 C, rrt::vector2f1 D, float step_m);

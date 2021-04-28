@@ -1,7 +1,7 @@
 {
   "system": {
     "loop_frequency_Hz": 10,
-    "maxNodes": 1000,
+    "maxNodes": 2000,
     "visualizerHeight_pix": 800,
     "visualizerWidth_pix": 800,
     "stepDistance_m": 0.200,
@@ -10,7 +10,7 @@
     "maxObjects": 6,
     "minObjects": 3,
     "maxObjectSize_m": 4.000,
-    "pathSmootherOn": false
+    "pathSmootherOn": true
   },
   "robot": {
     "width_m": 0.30,
