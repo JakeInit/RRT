@@ -7,6 +7,7 @@
 
 // /usr/include
 #include <iostream>
+#include <fstream>
 #include <thread>
 #include <csignal>
 #include <cmath>
@@ -66,6 +67,33 @@ int main(int argc, char** argv) {
         std::cout << std::endl << "Running Greedy Path Smoother" << std::endl;
         smoothPath();
       }
+
+      std::ofstream myfile;                                           // Write path to txt file
+      std::string filePath = PROJECTDIR;
+      std::string fileToOpen = filePath + "poses/poses.txt";
+
+      std::ifstream f(fileToOpen.c_str());
+      if(f.good()) {
+        if(std::remove(fileToOpen.c_str())) {
+          std::cout << "Issues deleting file poses.txt" << std::endl;
+        } else {
+          std::cout << "Removed old file poses.txt" << std::endl;
+        }
+      }
+
+      myfile.open(fileToOpen.c_str());
+      float bearing_rad = 0.f;
+      auto startIterator = pathToGoal_m.begin();
+      uint64_t pathCounter = 1;
+      for(auto& it : pathToGoal_m) {
+        if(pathCounter < pathToGoal_m.size() - 1) {
+          bearing_rad = getBearing_rad(it, *(startIterator + pathCounter));
+        }
+        myfile << it.x() << " " << it.y() << " " << bearing_rad << "\n";
+        pathCounter++;
+      }
+      myfile.close();
+
     } else {                                                          // Visualize new path
       static uint64_t index = 0;
       auto pt1 = pathToGoal_m.at(index);
@@ -220,6 +248,7 @@ void mainspace::placeObjectInMap(const rrt::objectNode& objectInMap, const std::
 
   auto convertedPoint = convertPointToWindow(objectInMap.location_m);
   object.setPosition(sf::Vector2f(convertedPoint.x(), convertedPoint.y()));
+  object.setRotation(objectInMap.orientation*180.0f/((float) M_PI));
 
   if(window->isOpen()) {
     // check all the window's events that were triggered since the last iteration of the loop
@@ -250,6 +279,9 @@ void mainspace::placeRobotInMap(const rrt::objectNode& robotInMap) {
 
   auto convertedPoint = convertPointToWindow(robotInMap.location_m);
   object.setPosition(sf::Vector2f(convertedPoint.x(), convertedPoint.y()));
+  object.setRotation(robotInMap.orientation*180.0f/((float) M_PI));
+
+  std::cout << "Robot Pose = " << std::endl << robotInMap.location_m << std::endl << robotInMap.orientation*180/M_PI << std::endl;
 
   if(window->isOpen()) {
     // check all the window's events that were triggered since the last iteration of the loop
@@ -524,6 +556,17 @@ void mainspace::smoothPath() {
   pathToGoal_m.clear();
   pathToGoal_m = smoothedPath_m;
 } // end smooth path
+
+float mainspace::getBearing_rad(rrt::vector2f1& currentPos, rrt::vector2f1& setPoint) {
+  float dx = setPoint.x() - currentPos.x();
+  float dy = setPoint.y() - currentPos.y();
+  auto magnitude = (float) sqrt(pow(dx,2) + pow(dy,2));
+
+  dx/= magnitude;
+  dy/= magnitude;
+
+  return atan2(dy,dx);
+}
 
 mainspace::pathNode::pathNode() {
   f = 0;

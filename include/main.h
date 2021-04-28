@@ -37,6 +37,7 @@ void aStar();
 void createPath(pathNode& goalNode);
 void initNeighborCosts(pathNode& parentNode);
 void smoothPath();
+float getBearing_rad(rrt::vector2f1& currentPos, rrt::vector2f1& setPoint);
 rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 static bool running = false;

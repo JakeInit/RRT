@@ -82,4 +82,5 @@ endif(WIN32)
 #-----Add main executable file for runtime-----------------------------
 #----------------------------------------------------------------------
 add_executable(rrtAplication src/apps/main.cpp)
+target_compile_definitions(rrtAplication PRIVATE PROJECTDIR="${PROJECT_SOURCE_DIR}/")
 target_link_libraries(rrtAplication PRIVATE ${LINK_LIBRARIES})

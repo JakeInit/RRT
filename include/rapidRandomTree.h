@@ -32,6 +32,7 @@ struct objectNode {
   vector2f1 location_m;
   float width;
   float height;
+  float orientation;
   objectNode();
 };
 

@@ -35,6 +35,7 @@ objectNode::objectNode() {
   location_m.setZero();
   width = 0;
   height = 0;
+  orientation = 0;
 }
 
 // Constructor
@@ -126,7 +127,7 @@ void rapidRandomTree::growTreeTowardsRandom() {
     neighbor = findClosestNeighbor(randomPoint, tree);
 
     // Check against other tree for direct connection first from nearest neighbor to its nearest neighbor
-    randomPoint = connectToOtherTree(randomPoint, neighbor);
+//    randomPoint = connectToOtherTree(randomPoint, neighbor);
 
     // Grow tree from closest neighbor towards random point by distance epsilon
     newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, maxStepDistance_m);
@@ -469,24 +470,26 @@ void rapidRandomTree::placeRobotInMap() {
   robotInMap.location_m = initPoint;
   robotInMap.width = robotWidth_m;
   robotInMap.height = robotHeight_m;
+  robotInMap.orientation = 0;
 }
 
 void rapidRandomTree::setUpObjects() {
   std::pair<std::shared_ptr<Boxf>, Transform3f> object;
-  objectNode newObject;
   Transform3f tf;
   tf.setIdentity();
   tf.translation().z() = 0;
-  tf.rotation().eulerAngles(0, 1, 2)[0] = 0;
-  tf.rotation().eulerAngles(0, 1, 2)[1] = 0;
-  tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
+  tf.rotation().eulerAngles(0, 1, 2).x() = 0;
+  tf.rotation().eulerAngles(0, 1, 2).y() = 0;
+  tf.rotation().eulerAngles(0, 1, 2).z() = 0;
 
   bool collision;
   numberOfObjects = (uint64_t) get_random((float) minNumberOfObjects, (float) numberOfObjects);
   std::cout << "Number of objects = " << numberOfObjects << std::endl;
   for(int i = 0; i < numberOfObjects; i++) {
+    objectNode newObject;
     newObject.height = get_random(0.100f, maxObjectSize_m);
     newObject.width = newObject.height;
+    newObject.orientation = 0;
 
     collision = true;
     while(collision) {
