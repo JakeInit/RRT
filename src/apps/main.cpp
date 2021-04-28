@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
     if(!qGoal->goalReached()) {                                                 // Grow the trees until they connect
       // Grow the starting tree
-      qInit->setOtherTree(qGoal->getTree());                                    // Pass goal tree to start
+//      qInit->setOtherTree(qGoal->getTree());                                    // Pass goal tree to start
       qInit->growTreeTowardsRandom();
       rrt::vector2f1 newStartTreePoint = qInit->getCoordinateOfLastNode();      // newStartTree point is newest point
       rrt::vector2f1 neighborNode = qInit->getConnectingNeighbor().location_m;  // location of last neighbor
@@ -280,8 +280,6 @@ void mainspace::placeRobotInMap(const rrt::objectNode& robotInMap) {
   auto convertedPoint = convertPointToWindow(robotInMap.location_m);
   object.setPosition(sf::Vector2f(convertedPoint.x(), convertedPoint.y()));
   object.setRotation(robotInMap.orientation*180.0f/((float) M_PI));
-
-  std::cout << "Robot Pose = " << std::endl << robotInMap.location_m << std::endl << robotInMap.orientation*180/M_PI << std::endl;
 
   if(window->isOpen()) {
     // check all the window's events that were triggered since the last iteration of the loop
