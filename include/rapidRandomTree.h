@@ -38,7 +38,7 @@ struct objectNode {
 class rapidRandomTree {
 public:
   // Constructor
-  rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree, bool goalTree_);
+  rapidRandomTree(const std::string& treeName_, rapidRandomTree* otherTree, bool goalTree_);
   // Deconstructor
   ~rapidRandomTree();
 
@@ -108,8 +108,9 @@ private:
   float boundaryWidth_m;
   float boundaryHeight_m;
   float maxObjectSize_m;
+  float robotHeight_m;
+  float robotWidth_m;
 
-  float robotRadius;
   bool reachedGoalPoint;
 
   uint64_t minNumberOfObjects;

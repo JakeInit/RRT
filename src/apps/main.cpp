@@ -96,7 +96,14 @@ void mainspace::initialize() {
   windowWidth_pix = configReader->parametersForSystem.visualizerWidth_pix;
   robotHeight_m = configReader->parametersForRobot.dims.height_m;
   robotWidth_m = configReader->parametersForRobot.dims.width_m;
-  boundarySize_m = configReader->parametersForSystem.boundaryWidth_m;
+
+  auto boundaryWidth_m = configReader->parametersForSystem.boundaryWidth_m;
+  auto boundaryHeight_m = configReader->parametersForSystem.boundaryHeight_m;
+  boundarySize_m = boundaryHeight_m;
+  if(boundaryHeight_m > boundaryWidth_m) {    // Must use smallest boundary value
+    boundarySize_m = boundaryWidth_m;
+  }
+
   maxNodes = configReader->parametersForSystem.maxNodes;
   pathSmootherOn = configReader->parametersForSystem.pathSmootherOn;
 
@@ -105,11 +112,14 @@ void mainspace::initialize() {
 
   // create the window
   window = std::make_unique<sf::RenderWindow>(sf::VideoMode(windowWidth_pix, windowHeight_pix), "Dual RRT");
-  windowResolution = 2*boundarySize_m/((float) windowHeight_pix);
+  windowResolution = 2*boundarySize_m/((float) windowWidth_pix);
+  if(windowWidth_pix < windowHeight_pix) {
+    windowResolution = 2*boundarySize_m/((float) windowHeight_pix);   // using highest pixel gives lowest resolution
+  }
   std::cout << "Window Resolution = " << windowResolution << std::endl;
 
-  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", robotHeight_m, nullptr, false);
-  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", robotHeight_m, qInit.get(), true);
+  qInit = std::make_unique<rrt::rapidRandomTree>("StartPoint", nullptr, false);
+  qGoal = std::make_unique<rrt::rapidRandomTree>("GoalPoint", qInit.get(), true);
   auto objects = qInit->getObjects();
   if(!objects.empty()) {
     for(const auto& it : objects) {
@@ -260,10 +270,10 @@ void mainspace::placeRobotInMap(const rrt::objectNode& robotInMap) {
 }
 
 void mainspace::placeGoalPointOnMap(rrt::vector2f1& goalPt) {
-  sf::CircleShape circle(0.100f/windowResolution);
+  sf::CircleShape circle(0.050f/windowResolution);
   circle.setFillColor(sf::Color(255, 0, 0));
   circle.setOutlineColor(sf::Color(255, 0, 0));
-  circle.setOrigin(sf::Vector2f(0.100f/windowResolution, 0.100f/windowResolution));
+  circle.setOrigin(sf::Vector2f(0.050f/windowResolution, 0.050f/windowResolution));
 
   auto convertedPoint = convertPointToWindow(goalPt);
   circle.setPosition(sf::Vector2f(convertedPoint.x(), convertedPoint.y()));

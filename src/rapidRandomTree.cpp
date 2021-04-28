@@ -38,9 +38,8 @@ objectNode::objectNode() {
 }
 
 // Constructor
-rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius_, rapidRandomTree* otherTree, bool goalTree_) {
+rapidRandomTree::rapidRandomTree(const std::string& treeName_, rapidRandomTree* otherTree, bool goalTree_) {
   treeName = treeName_;
-  robotRadius = robotRadius_;
 
   configReader = rrt::system::jsonParser::getInstance();
   maxStepDistance_m = configReader->parametersForSystem.stepDistance_m;
@@ -49,6 +48,8 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
   maxObjectSize_m = configReader->parametersForSystem.maxObjectSize_m;
   numberOfObjects = configReader->parametersForSystem.maxObjects;
   minNumberOfObjects = configReader->parametersForSystem.minObjects;
+  robotHeight_m = configReader->parametersForRobot.dims.height_m;
+  robotWidth_m = configReader->parametersForRobot.dims.width_m;
 
   setUpRobotModel();
   if(otherTree == nullptr) {     // other Tree will set up objects if not nullptr
@@ -114,8 +115,8 @@ void rapidRandomTree::growTreeTowardsRandom() {
     randomPointCollison = true;
     while (randomPointCollison) {
       // Create a random point
-      randomPoint.x() = get_random(-boundaryWidth_m + robotRadius/2, boundaryWidth_m - robotRadius/2);
-      randomPoint.y() = get_random(-boundaryHeight_m + robotRadius/2, boundaryHeight_m - robotRadius/2);
+      randomPoint.x() = get_random(-boundaryWidth_m + robotWidth_m/2, boundaryWidth_m - robotWidth_m/2);
+      randomPoint.y() = get_random(-boundaryHeight_m + robotHeight_m/2, boundaryHeight_m - robotHeight_m/2);
 
       // Check collision detector of random point
       randomPointCollison = collisionDetection(randomPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
@@ -131,6 +132,10 @@ void rapidRandomTree::growTreeTowardsRandom() {
     newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, maxStepDistance_m);
 
     // Verify no collision from neighbor location to new point location
+    float robotRadius = robotWidth_m;
+    if(robotHeight_m < robotWidth_m) {
+      robotRadius = robotHeight_m;
+    }
     int numSteps = (int) (maxStepDistance_m/robotRadius);
     if(numSteps > 1) {
       for (int i = numSteps; i > 0; i--) {
@@ -188,6 +193,10 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
 
   bool robotoCollision = true;
   // Verify no collision from neighbor location to new point location
+  float robotRadius = robotWidth_m;
+  if(robotHeight_m < robotWidth_m) {
+    robotRadius = robotHeight_m;
+  }
   int numSteps = (int) (maxStepDistance_m/robotRadius);
   if(numSteps > 1) {
     for (int i = numSteps; i > 0; i--) {
@@ -383,7 +392,7 @@ float rapidRandomTree::get_random(float lowerBound, float upperBound) {
 }
 
 void rapidRandomTree::setUpRobotModel() {
-  robotModel.first = std::make_unique<Boxf>(robotRadius, robotRadius, 0);
+  robotModel.first = std::make_unique<Boxf>(robotWidth_m, robotHeight_m, 0);
   Transform3f tfRobot;
   tfRobot.setIdentity();
   tfRobot.translation().x() = 0;
@@ -458,8 +467,8 @@ void rapidRandomTree::setWalls() {
 
 void rapidRandomTree::placeRobotInMap() {
   robotInMap.location_m = initPoint;
-  robotInMap.width = robotRadius;
-  robotInMap.height = robotRadius;
+  robotInMap.width = robotWidth_m;
+  robotInMap.height = robotHeight_m;
 }
 
 void rapidRandomTree::setUpObjects() {
