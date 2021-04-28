@@ -86,7 +86,7 @@ int main(int argc, char** argv) {
       auto startIterator = pathToGoal_m.begin();
       uint64_t pathCounter = 1;
       for(auto& it : pathToGoal_m) {
-        if(pathCounter < pathToGoal_m.size() - 1) {
+        if(pathCounter < pathToGoal_m.size()) {
           bearing_rad = getBearing_rad(it, *(startIterator + pathCounter));
         }
         myfile << it.x() << " " << it.y() << " " << bearing_rad << "\n";
@@ -480,6 +480,7 @@ void mainspace::initNeighborCosts(pathNode& parentNode) {
 void mainspace::createPath(pathNode& goalNode) {
   pathNode nextNode = goalNode;
   pathToGoal_m.clear();
+
   pathCreated = false;
   counter = 0;
   while(!pathCreated) {
@@ -545,11 +546,15 @@ void mainspace::smoothPath() {
           pathSmoothed = true;
           break;
         }
-        editablePath_m.erase(editablePath_m.begin() + it - 1);
+        editablePath_m.erase(editablePath_m.begin(), editablePath_m.begin() + it - 1);
         break;
       }
     } // end looping path
   } // end while path has not been smoothed
+
+  for(const auto& it : smoothedPath_m) {
+    std::cout << it << std::endl << std::endl;
+  }
 
   pathToGoal_m.clear();
   pathToGoal_m = smoothedPath_m;
