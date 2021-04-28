@@ -24,6 +24,7 @@ public:
   };
 
   struct systemConfiguration {
+    bool pathSmootherOn;
     float loop_frequency_Hz;
     float stepDistance_m;
     float boundaryHeight_m;
@@ -31,6 +32,7 @@ public:
     float maxObjectSize_m;
     uint64_t maxNodes;
     uint64_t maxObjects;
+    uint64_t minObjects;
     uint64_t visualizerHeight_pix;
     uint64_t visualizerWidth_pix;
     systemConfiguration();

@@ -41,6 +41,7 @@ rrt::vector2f1 convertPointToWindow(rrt::vector2f1 point);
 
 static bool running = false;
 static bool pathCreated = false;
+static bool pathSmootherOn = false;
 static rrt::system::jsonParser* configReader = nullptr;
 static uint64_t windowHeight_pix;
 static uint64_t windowWidth_pix;

@@ -49,6 +49,7 @@ void jsonParser::parseConfigValues() {
   parametersForRobot.dims.width_m = parameters["robot"]["width_m"].asFloat();
   parametersForRobot.dims.height_m = parameters["robot"]["height_m"].asFloat();
 
+  parametersForSystem.pathSmootherOn = parameters["system"]["pathSmootherOn"].asBool();
   parametersForSystem.loop_frequency_Hz = parameters["system"]["loop_frequency_Hz"].asFloat();
   parametersForSystem.stepDistance_m = parameters["system"]["stepDistance_m"].asFloat();
   parametersForSystem.boundaryHeight_m = parameters["system"]["boundaryHeight_m"].asFloat();
@@ -58,6 +59,7 @@ void jsonParser::parseConfigValues() {
   parametersForSystem.visualizerHeight_pix = parameters["system"]["visualizerHeight_pix"].asUInt64();
   parametersForSystem.visualizerWidth_pix = parameters["system"]["visualizerWidth_pix"].asUInt64();
   parametersForSystem.maxObjects = parameters["system"]["maxObjects"].asUInt64();
+  parametersForSystem.minObjects = parameters["system"]["minObjects"].asUInt64();
 
   paramsLoaded = true;
 }
@@ -93,6 +95,7 @@ jsonParser::robotConfiguration::robotConfiguration() {
 }
 
 jsonParser::systemConfiguration::systemConfiguration() {
+  pathSmootherOn = false;
   loop_frequency_Hz = 0;
   stepDistance_m = 0;
   boundaryHeight_m = 0;
@@ -102,6 +105,7 @@ jsonParser::systemConfiguration::systemConfiguration() {
   visualizerWidth_pix = 0;
   maxObjectSize_m = 0;
   maxObjects = 0;
+  minObjects = 0;
 }
 
 } // end namespace system

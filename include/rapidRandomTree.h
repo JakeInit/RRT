@@ -112,6 +112,7 @@ private:
   float robotRadius;
   bool reachedGoalPoint;
 
+  uint64_t minNumberOfObjects;
   uint64_t numberOfObjects;
 
   std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>  robotModel;

@@ -9,7 +9,6 @@
 #include <iostream>
 #include <thread>
 #include <csignal>
-#include <cstdio>
 #include <cmath>
 #include <memory>
 #include <vector>
@@ -64,7 +63,9 @@ int main(int argc, char** argv) {
     } else if (!pathCreated) {                                        // Determine path from start to goal
       aStar();
       std::cout << std::endl << "Running Greedy Path Smoother" << std::endl;
-      smoothPath();
+      if(pathSmootherOn){
+        smoothPath();
+      }
     } else {                                                          // Visualize new path
       static uint64_t index = 0;
       auto pt1 = pathToGoal_m.at(index);
@@ -97,6 +98,7 @@ void mainspace::initialize() {
   robotWidth_m = configReader->parametersForRobot.dims.width_m;
   boundarySize_m = configReader->parametersForSystem.boundaryWidth_m;
   maxNodes = configReader->parametersForSystem.maxNodes;
+  pathSmootherOn = configReader->parametersForSystem.pathSmootherOn;
 
   float loopFrequency_hz = configReader->parametersForSystem.loop_frequency_Hz;
   loopTime_ms = 1000.0f / loopFrequency_hz;
@@ -476,11 +478,11 @@ void mainspace::smoothPath() {
       auto greedyPoint = editablePath_m.at(it);
       auto distanceBetweenNodes = rrt::rapidRandomTree::distance(locationToConsider_m, greedyPoint);
       // Check if collision to point
-      int stepSize = (int) (distanceBetweenNodes / robotHeight_m);
+      int numSteps = (int) (distanceBetweenNodes / robotHeight_m) + 1;
       collision = false;
-      if (stepSize > 0) {
-        for (int i = stepSize; i > 0; i--) {
-          float distance = distanceBetweenNodes / ((float) i);
+      if (numSteps > 1) {
+        for (int i = 1; i <= numSteps; i++) {
+          float distance = distanceBetweenNodes * ((float) i/ ((float) numSteps));
           auto subPoint = rrt::rapidRandomTree::projectToPointOnLine(locationToConsider_m, greedyPoint, distance);
           if (rrt::rapidRandomTree::collisionDetection(subPoint, qInit->getRobotAndTransform(),
                                                        qInit->getObjectAndTransform(),

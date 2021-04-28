@@ -8,7 +8,9 @@
     "boundaryHeight_m": 5.000,
     "boundaryWidth_m": 5.000,
     "maxObjects": 6,
-    "maxObjectSize_m": 2.000
+    "minObjects": 3,
+    "maxObjectSize_m": 4.000,
+    "pathSmootherOn": false
   },
   "robot": {
     "width_m": 0.30,

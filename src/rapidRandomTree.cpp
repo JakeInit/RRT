@@ -48,6 +48,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, float robotRadius
   boundaryHeight_m = configReader->parametersForSystem.boundaryHeight_m;
   maxObjectSize_m = configReader->parametersForSystem.maxObjectSize_m;
   numberOfObjects = configReader->parametersForSystem.maxObjects;
+  minNumberOfObjects = configReader->parametersForSystem.minObjects;
 
   setUpRobotModel();
   if(otherTree == nullptr) {     // other Tree will set up objects if not nullptr
@@ -130,10 +131,10 @@ void rapidRandomTree::growTreeTowardsRandom() {
     newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, maxStepDistance_m);
 
     // Verify no collision from neighbor location to new point location
-    int stepSize = (int) (maxStepDistance_m/robotRadius);
-    if(stepSize > 0) {
-      for (int i = stepSize; i > 0; i--) {
-        float distance = maxStepDistance_m / ((float) i);
+    int numSteps = (int) (maxStepDistance_m/robotRadius) + 1;
+    if(numSteps > 1) {
+      for (int i = 1; i <= numSteps; i++) {
+        float distance = maxStepDistance_m * ((float) i/ ((float) numSteps));
         auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
 
         // Check if robot will collide at subpoint
@@ -186,10 +187,10 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
 
   bool robotoCollision = true;
   // Verify no collision from neighbor location to new point location
-  int stepSize = (int) (maxStepDistance_m/robotRadius);
-  if(stepSize > 0) {
-    for (int i = stepSize; i > 0; i--) {
-      float distance = maxStepDistance_m / ((float) i);
+  int numSteps = (int) (maxStepDistance_m/robotRadius) + 1;
+  if(numSteps > 1) {
+    for (int i = 1; i <= numSteps; i++) {
+      float distance = maxStepDistance_m * ((float) i/ ((float) numSteps));
       auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
 
       // Check if robot will collide at subpoint
@@ -470,7 +471,7 @@ void rapidRandomTree::setUpObjects() {
   tf.rotation().eulerAngles(0, 1, 2)[2] = 0;
 
   bool collision;
-  numberOfObjects = (uint64_t) get_random(0.f, (float) numberOfObjects);
+  numberOfObjects = (uint64_t) get_random((float) minNumberOfObjects, (float) numberOfObjects);
   std::cout << "Number of objects = " << numberOfObjects << std::endl;
   for(int i = 0; i < numberOfObjects; i++) {
     newObject.height = get_random(0.100f, maxObjectSize_m);
