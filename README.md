@@ -1,11 +1,12 @@
-**Binary RRT**
+**BiDirectional RRT**
 
 ## Description
 *C++ module that explores a given environment area creating trees expanding towards 
 each other and then determining a path to take while avoiding obstacles. This algorithm
 is used for a 2d environment. The robot is considered differential driven with wheel centered.
-Therefore the robot can be treated as holonomic since it can turn in place to align with
-the next goal point and drive straight.*
+Therefore for determining the route, the robot will be treated as holonomic since it can turn 
+in place to align with the next goal point and drive straight even though it is a non-holonomic 
+vehical*
 
 ---
 
@@ -91,16 +92,33 @@ make install <br />
 	
 ---
 
+## Configurations Parameters Found in Json
+1. loop_frequency_Hz:    determines how fast the loop time of the application is run at <br />
+2. maxNodes:             the max number of attempts to connect the trees <br />
+3. visualizerHeight_pix: visualizer window height in pixels, <br />
+4. visualizerWidth_pix:  visualizer window width in pixels <br />
+5. stepDistance_m:       max distance to expand the tree on each iteration <br />
+6. boundaryHeight_m:     the +/- max y values of the coordinate system <br />
+7. boundaryWidth_m:      the +/- max x values of the coordinate system <br />
+8. maxObjects:           max number of objects to be randomly generated in the map <br />
+9. minObjects:           min number of objects to be randomly generated in the map <br />
+10. maxObjectSize_m:      square objects are generated form 0.100m to a max size of this value <br />
+11. pathSmootherOn:       attempts to smooth the path taken if enabled <br />
+12. width_m:              robot width <br />
+13. height_m:             robot height <br />
+
+---
+
 ## Notes:
 1. User configurations exist in pathToRepo/RRT/json/config.json
-2. Robot height and width should be the same
-3. Boundary height and width should be the same
-4. Visualizer height and width should be the same
-5. Objects in visualizer will be white squares
-6. The robot in visualizer will be a blue square
-7. The goal point in visualizer will be a red circle
-8. The RRT in visualizer will made up of red line segments
-9. The path taken in visualizer will be outlined in green
+2. Objects in visualizer will be white squares as well as borders
+3. The robot in visualizer will be a blue square
+4. The goal point in visualizer will be a red circle
+5. The RRT in visualizer will made up of red line segments
+6. The path taken in visualizer will be outlined in green
+7. List of poses of path taken is written to pathToRepo/RRT/poses/poses.txt
+8. Too many objects can make path impossible and impossible to place robot and goal point
+9. Too large of objects can make path impossible and impossible to place robot and goal point
 
 ---
 
