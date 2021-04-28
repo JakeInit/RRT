@@ -62,8 +62,8 @@ int main(int argc, char** argv) {
       mergeTrees();
     } else if (!pathCreated) {                                        // Determine path from start to goal
       aStar();
-      std::cout << std::endl << "Running Greedy Path Smoother" << std::endl;
-      if(pathSmootherOn){
+      if(pathSmootherOn) {
+        std::cout << std::endl << "Running Greedy Path Smoother" << std::endl;
         smoothPath();
       }
     } else {                                                          // Visualize new path
@@ -481,8 +481,9 @@ void mainspace::smoothPath() {
       int numSteps = (int) (distanceBetweenNodes / robotHeight_m) + 1;
       collision = false;
       if (numSteps > 1) {
-        for (int i = 1; i <= numSteps; i++) {
-          float distance = distanceBetweenNodes * ((float) i/ ((float) numSteps));
+        for (int i = numSteps; i > 1 ; i--) {
+          float distance = distanceBetweenNodes * ((float) i);
+          distance /= (float) numSteps;
           auto subPoint = rrt::rapidRandomTree::projectToPointOnLine(locationToConsider_m, greedyPoint, distance);
           if (rrt::rapidRandomTree::collisionDetection(subPoint, qInit->getRobotAndTransform(),
                                                        qInit->getObjectAndTransform(),

@@ -131,10 +131,11 @@ void rapidRandomTree::growTreeTowardsRandom() {
     newPoint = projectToPointOnLine(tree.at(neighbor).location_m, randomPoint, maxStepDistance_m);
 
     // Verify no collision from neighbor location to new point location
-    int numSteps = (int) (maxStepDistance_m/robotRadius) + 1;
+    int numSteps = (int) (maxStepDistance_m/robotRadius);
     if(numSteps > 1) {
-      for (int i = 1; i <= numSteps; i++) {
-        float distance = maxStepDistance_m * ((float) i/ ((float) numSteps));
+      for (int i = numSteps; i > 0; i--) {
+        float distance = maxStepDistance_m * ((float) i);
+        distance /= (float) numSteps;
         auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
 
         // Check if robot will collide at subpoint
@@ -187,10 +188,11 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
 
   bool robotoCollision = true;
   // Verify no collision from neighbor location to new point location
-  int numSteps = (int) (maxStepDistance_m/robotRadius) + 1;
+  int numSteps = (int) (maxStepDistance_m/robotRadius);
   if(numSteps > 1) {
-    for (int i = 1; i <= numSteps; i++) {
-      float distance = maxStepDistance_m * ((float) i/ ((float) numSteps));
+    for (int i = numSteps; i > 0; i--) {
+      float distance = maxStepDistance_m * ((float) i);
+      distance /= (float) numSteps;
       auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
 
       // Check if robot will collide at subpoint
