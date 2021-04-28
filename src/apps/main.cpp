@@ -552,10 +552,6 @@ void mainspace::smoothPath() {
     } // end looping path
   } // end while path has not been smoothed
 
-  for(const auto& it : smoothedPath_m) {
-    std::cout << it << std::endl << std::endl;
-  }
-
   pathToGoal_m.clear();
   pathToGoal_m = smoothedPath_m;
 } // end smooth path
