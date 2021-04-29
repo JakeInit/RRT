@@ -115,6 +115,9 @@ The below is an example of user defined objects. The value "UserDefinedObjectsON
 set to true to use these. Otherwise random objects are created. Objects are defined by 2D <br />
 x, y coordinates. Any new object and any number can be added using the format below. <br />
 <br />
+IMPORTANT:
+"User defined objects must be axis aligned for both x and y. Shapes must be square or rectangle. <br />
+<br />
 "object_1": [ <br />
 &nbsp;&nbsp;[-2, -2], <br />
 &nbsp;&nbsp;[-2, 2], <br />
