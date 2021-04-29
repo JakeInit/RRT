@@ -52,6 +52,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, rapidRandomTree* 
   minNumberOfObjects = configReader->parametersForSystem.minObjects;
   robotHeight_m = configReader->parametersForRobot.dims.height_m;
   robotWidth_m = configReader->parametersForRobot.dims.width_m;
+  robotBuffer_m = configReader->parametersForRobot.buffer_m;
 
   setUpRobotModel();
   if(otherTree == nullptr) {     // other Tree will set up objects if not nullptr
@@ -186,10 +187,11 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
   // Get distance from setPt to nearest neighbor
   // setPt does not get added to tree here. That is done outside the class since it already exist in the other tree
   auto distanceToNeighbor = distance(setPt, tree.at(neighbor).location_m);
-  if(distanceToNeighbor < maxStepDistance_m) {
+  if(distanceToNeighbor <= maxStepDistance_m) {
     setConnectingNeighbor(tree.at(neighbor));           // Can be used to connect last start tree point to this neighbor
     lastNodeCoordinate = tree.at(neighbor).location_m;    // The neighbor coordinate to connect to
     reachedGoalPoint = true;
+    std::cout << "connected to neighbor node"<< std::endl;
     return;
   }
 
@@ -400,7 +402,7 @@ float rapidRandomTree::get_random(float lowerBound, float upperBound) {
 
 void rapidRandomTree::setUpRobotModel() {
   // add 0.200 for buffer to objects
-  robotModel.first = std::make_unique<Boxf>(robotWidth_m + 0.200f, robotHeight_m + 0.200f, 0);
+  robotModel.first = std::make_unique<Boxf>(robotWidth_m + robotBuffer_m, robotHeight_m + robotBuffer_m, 0);
   Transform3f tfRobot;
   tfRobot.setIdentity();
   tfRobot.translation().x() = 0;
@@ -490,6 +492,7 @@ void rapidRandomTree::setUpObjects() {
   tf.rotation().eulerAngles(0, 1, 2).z() = 0;
 
   bool collision;
+  uint8_t counter;
   numberOfObjects = (uint64_t) get_random((float) minNumberOfObjects, (float) numberOfObjects);
   std::cout << "Number of objects = " << numberOfObjects << std::endl;
   for(int i = 0; i < numberOfObjects; i++) {
@@ -499,10 +502,16 @@ void rapidRandomTree::setUpObjects() {
     newObject.orientation = 0;
 
     collision = true;
-    while(collision) {
+    counter = 0;
+    while(collision && counter < 100) {
       newObject.location_m.x() = get_random(-boundaryWidth_m, boundaryWidth_m);
       newObject.location_m.y() = get_random(-boundaryHeight_m, boundaryHeight_m);
       collision = newObstacleCollisionDetection(newObject);
+      counter++;
+    }
+
+    if(counter >= 100) {
+      continue;
     }
 
     tf.translation().x() = newObject.location_m.x();
@@ -511,7 +520,7 @@ void rapidRandomTree::setUpObjects() {
     object = {box, tf};
     objects.emplace_back(object);
 
-    newObject.objectId = i;
+    newObject.objectId = objectInMap.size();
     objectInMap.emplace_back(newObject);
   }
 }
@@ -613,26 +622,6 @@ bool rapidRandomTree::connectToNeighborSegment(vector2f1 &queryPt, uint64_t neig
     return false;                         // Will extend queryPt towards neighbor later
   }
 
-  // Check if from neighbor to parent if there is a connection
-  auto closestPt = closestPointOnSegment(neighborNode.location_m, tree.at(neighborNode.parent).location_m, queryPt);
-  if(closestPt != neighborNode.location_m) {
-    auto dist = distance(closestPt, queryPt);
-    if(dist <= maxStepDistance_m) {
-      // Parent of neighbor is the new node
-      tree.at(neighbor).parent = tree.size();
-      // Add point on segment to tree
-      tree.emplace_back(createNode(closestPt));
-      // Newest node will point to nearest neighbor
-      tree.back().neighbors.emplace_back(neighbor);
-
-      // Store connecting node to new point for access
-      setConnectingNeighbor(tree.back());             // This is the node the start tree will connect to
-      lastNodeCoordinate = closestPt;                   // This is the location of the connecting node
-      reachedGoalPoint = true;
-      return true;  // Indicates we connected two trees together by segment
-    }
-  }
-
   for(auto it : neighborNode.neighbors) { // Check all segments of nodes connecting to neighbor
     auto nearestPointOnSegment = closestPointOnSegment(neighborNode.location_m, tree.at(it).location_m, queryPt);
 
@@ -655,8 +644,32 @@ bool rapidRandomTree::connectToNeighborSegment(vector2f1 &queryPt, uint64_t neig
       setConnectingNeighbor(tree.back());             // This is the node the start tree will connect to
       lastNodeCoordinate = nearestPointOnSegment;        // This is the location of the connecting node
       reachedGoalPoint = true;
+      std::cout << "Connected to neighbor segment" << std::endl;
       return true;  // Indicates we connected two trees together by segment
     }
+  }
+
+  // Check if from neighbor to parent if there is a connection
+  auto nearestPointOnSegment = closestPointOnSegment(neighborNode.location_m, tree.at(neighborNode.parent).location_m, queryPt);
+  if(nearestPointOnSegment == tree.at(neighbor).location_m) {
+    return false;                       // Will later check if can directly connect to neighbor
+  }
+
+  auto distanceToNearest = distance(nearestPointOnSegment, queryPt);
+  if(distanceToNearest <= maxStepDistance_m) {
+    // Parent of neighbor is the new node
+    tree.at(neighbor).parent = tree.size();
+    // Add point on segment to tree
+    tree.emplace_back(createNode(nearestPointOnSegment));
+    // Newest node will point to nearest neighbor
+    tree.back().neighbors.emplace_back(neighbor);
+
+    // Store connecting node to new point for access
+    setConnectingNeighbor(tree.back());             // This is the node the start tree will connect to
+    lastNodeCoordinate = nearestPointOnSegment;        // This is the location of the connecting node
+    reachedGoalPoint = true;
+    std::cout << "connected by parent and neighbor segment" << std::endl;
+    return true;  // Indicates we connected two trees together by segment
   }
 
   return false;

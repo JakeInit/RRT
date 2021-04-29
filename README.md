@@ -108,6 +108,7 @@ make install <br />
 11. pathSmootherOn:       attempts to smooth the path taken if enabled <br />
 12. width_m:              robot width <br />
 13. height_m:             robot height <br />
+14. buffer_m:             robot buffer for gap to leave betwen objects
 
 ---
 

@@ -20,6 +20,7 @@ public:
       float width_m;
       float height_m;
     } dims{};
+    float buffer_m;
     robotConfiguration();
   };
 

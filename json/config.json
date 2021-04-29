@@ -10,10 +10,11 @@
     "maxObjects": 6,
     "minObjects": 3,
     "maxObjectSize_m": 4.000,
-    "pathSmootherOn": true
+    "pathSmootherOn": false
   },
   "robot": {
-    "width_m": 0.30,
-    "height_m": 0.30
+    "width_m": 0.300,
+    "height_m": 0.300,
+    "buffer_m": 0.100
   }
 }

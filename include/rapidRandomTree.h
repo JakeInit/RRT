@@ -112,6 +112,7 @@ private:
   float maxObjectSize_m;
   float robotHeight_m;
   float robotWidth_m;
+  float robotBuffer_m;
 
   bool reachedGoalPoint;
 

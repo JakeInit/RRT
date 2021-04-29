@@ -48,6 +48,7 @@ void jsonParser::parseConfigValues() {
 
   parametersForRobot.dims.width_m = parameters["robot"]["width_m"].asFloat();
   parametersForRobot.dims.height_m = parameters["robot"]["height_m"].asFloat();
+  parametersForRobot.buffer_m = parameters["robot"]["buffer_m"].asFloat();
 
   parametersForSystem.pathSmootherOn = parameters["system"]["pathSmootherOn"].asBool();
   parametersForSystem.loop_frequency_Hz = parameters["system"]["loop_frequency_Hz"].asFloat();
@@ -92,6 +93,7 @@ void jsonParser::deleteInstance() {
 jsonParser::robotConfiguration::robotConfiguration() {
   dims.height_m = 0;
   dims.width_m = 0;
+  buffer_m = 0;
 }
 
 jsonParser::systemConfiguration::systemConfiguration() {
