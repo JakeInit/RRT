@@ -10,7 +10,21 @@ vehical*
 
 ---
 
+Random Object placement with no Optimizations example 1: <br />
+
 ![fullPath](https://user-images.githubusercontent.com/58401719/116438371-601d0f80-a81c-11eb-838d-624ae844e58a.gif)
+
+Random Object placement with no Optimizations example 2: <br />
+
+![fullPath2](https://user-images.githubusercontent.com/58401719/116594273-071eab80-a8f0-11eb-8540-d79ca1d1846f.gif)
+
+User Defined Object placement with path Optimizations: <br />
+
+![UserDefined_PathOpitmized](https://user-images.githubusercontent.com/58401719/116594423-2ddce200-a8f0-11eb-8dbc-c11e2fb44425.gif)
+
+Random Object placement with path Optimizations: <br />
+
+![pathOptimized](https://user-images.githubusercontent.com/58401719/116594592-64b2f800-a8f0-11eb-93c0-cf884f9d35c4.gif)
 
 ## Cloning the repo
 
