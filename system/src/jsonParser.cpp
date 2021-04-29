@@ -50,7 +50,21 @@ void jsonParser::parseConfigValues() {
   parametersForRobot.dims.height_m = parameters["robot"]["height_m"].asFloat();
   parametersForRobot.buffer_m = parameters["robot"]["buffer_m"].asFloat();
 
+  // User defined objects
+  objects.clear();
+  for(const auto& object : parameters["objects"]) {
+    std::vector<std::pair<float, float>> vertices;
+    std::pair<float, float> vertex;
+    for(const auto& pair : object) {
+      vertex.first = pair[0].asFloat();
+      vertex.second = pair[1].asFloat();
+      vertices.emplace_back(vertex);
+    }
+    objects.emplace_back(vertices);
+  }
+
   parametersForSystem.pathSmootherOn = parameters["system"]["pathSmootherOn"].asBool();
+  parametersForSystem.UserDefinedObjectsOn = parameters["system"]["UserDefinedObjectsOn"].asBool();
   parametersForSystem.loop_frequency_Hz = parameters["system"]["loop_frequency_Hz"].asFloat();
   parametersForSystem.stepDistance_m = parameters["system"]["stepDistance_m"].asFloat();
   parametersForSystem.boundaryHeight_m = parameters["system"]["boundaryHeight_m"].asFloat();

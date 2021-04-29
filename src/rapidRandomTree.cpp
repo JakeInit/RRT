@@ -44,6 +44,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, rapidRandomTree* 
   treeName = treeName_;
 
   configReader = rrt::system::jsonParser::getInstance();
+  userDefinedObjectsOn = configReader->parametersForSystem.UserDefinedObjectsOn;
   maxStepDistance_m = configReader->parametersForSystem.stepDistance_m;
   boundaryWidth_m = configReader->parametersForSystem.boundaryWidth_m;
   boundaryHeight_m = configReader->parametersForSystem.boundaryHeight_m;
@@ -53,11 +54,17 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, rapidRandomTree* 
   robotHeight_m = configReader->parametersForRobot.dims.height_m;
   robotWidth_m = configReader->parametersForRobot.dims.width_m;
   robotBuffer_m = configReader->parametersForRobot.buffer_m;
+  userObjects = configReader->objects;
 
   setUpRobotModel();
   if(otherTree == nullptr) {     // other Tree will set up objects if not nullptr
     setWalls();
-    setUpObjects();
+    if(userDefinedObjectsOn) {
+      std::cout << "Setting up user defined objects" << std::endl;
+      setUpUserObjects();
+    } else {
+      setUpObjects();
+    }
   } else {
     objects = otherTree->getObjectAndTransform();
     if(objects.empty()) {
@@ -498,7 +505,7 @@ void rapidRandomTree::setUpObjects() {
   for(int i = 0; i < numberOfObjects; i++) {
     objectNode newObject;
     newObject.height = get_random(0.100f, maxObjectSize_m);
-    newObject.width = newObject.height;
+    newObject.width = get_random(0.100f, maxObjectSize_m);
     newObject.orientation = 0;
 
     collision = true;
@@ -512,6 +519,59 @@ void rapidRandomTree::setUpObjects() {
 
     if(counter >= 100) {
       continue;
+    }
+
+    tf.translation().x() = newObject.location_m.x();
+    tf.translation().y() = newObject.location_m.y();
+    std::shared_ptr<Boxf> box(new Boxf(newObject.width, newObject.height, 0));
+    object = {box, tf};
+    objects.emplace_back(object);
+
+    newObject.objectId = objectInMap.size();
+    objectInMap.emplace_back(newObject);
+  }
+}
+
+void rapidRandomTree::setUpUserObjects() {
+  std::pair<std::shared_ptr<Boxf>, Transform3f> object;
+  Transform3f tf;
+  tf.setIdentity();
+  tf.translation().z() = 0;
+  tf.rotation().eulerAngles(0, 1, 2).x() = 0;
+  tf.rotation().eulerAngles(0, 1, 2).y() = 0;
+  tf.rotation().eulerAngles(0, 1, 2).z() = 0;
+
+  bool collision;
+  float objectHeight_m, objectWidth_m, centerX, centerY;
+
+  for(const auto& shape : userObjects) {
+    // get width of shape
+    for(int i = 1; i < shape.size() - 1; i++) {
+      objectWidth_m = std::fabs(shape.front().first - shape.at(i).first);
+      if(objectWidth_m != 0) {
+        centerX = (shape.front().first + shape.at(i).first)/2;
+        break;
+      }
+    }
+
+    // get height of shape
+    for(int i = 1; i < shape.size() - 1; i++) {
+      objectHeight_m = std::fabs(shape.front().second - shape.at(i).second);
+      if(objectHeight_m != 0) {
+        centerY = (shape.front().second + shape.at(i).second)/2;
+        break;
+      }
+    }
+
+    objectNode newObject;
+    newObject.height = objectHeight_m;
+    newObject.width = objectWidth_m;
+    newObject.orientation = 0;
+
+    newObject.location_m.x() = centerX;
+    newObject.location_m.y() = centerY;
+    if(newObstacleCollisionDetection(newObject)) {
+      continue; // go to end of loop without adding object if there is a colision
     }
 
     tf.translation().x() = newObject.location_m.x();

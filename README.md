@@ -106,9 +106,27 @@ make install <br />
 9. minObjects:           min number of objects to be randomly generated in the map <br />
 10. maxObjectSize_m:      square objects are generated form 0.100m to a max size of this value <br />
 11. pathSmootherOn:       attempts to smooth the path taken if enabled <br />
+12. UserDefinedObjectsOn  Places user defined objects in graph instead of random placement <br />
 12. width_m:              robot width <br />
 13. height_m:             robot height <br />
 14. buffer_m:             robot buffer for gap to leave betwen objects
+
+The below is an example of user defined objects. The value "UserDefinedObjectsON" must be <br />
+set to true to use these. Otherwise random objects are created. Objects are defined by 2D <br />
+x, y coordinates. Any new object and any number can be added using the format below. <br />
+<br />
+"object_1": [ <br />
+&nbsp;&nbsp;[-2, -2], <br />
+&nbsp;&nbsp;[-2, 2], <br />
+&nbsp;&nbsp;[2, -2], <br />
+&nbsp;&nbsp;[2, 2] <br />
+], <br />
+"object_2": [ <br />
+&nbsp;&nbsp;[-3, -3], <br />
+&nbsp;&nbsp;[-2.5, -2.5], <br />
+&nbsp;&nbsp;[-2.5, -3], <br />
+&nbsp;&nbsp;[-3, -2.5] <br />
+] <br />
 
 ---
 

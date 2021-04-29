@@ -9,6 +9,7 @@
 #define RRT_SYSTEM_INCLUDE_JSONPARSER_H
 
 #include <string>
+#include <vector>
 
 namespace rrt {
 namespace system {
@@ -26,6 +27,7 @@ public:
 
   struct systemConfiguration {
     bool pathSmootherOn;
+    bool UserDefinedObjectsOn;
     float loop_frequency_Hz;
     float stepDistance_m;
     float boundaryHeight_m;
@@ -46,6 +48,11 @@ public:
 
   robotConfiguration parametersForRobot;
   systemConfiguration parametersForSystem;
+
+  // Each vector iterator is an object
+  //  each iterator in the sub vector is a coordinate of the object
+  //    coordinates are stored as x, y pairs
+  std::vector<std::vector<std::pair<float, float>>> objects;
 
 private:
   // Constructor

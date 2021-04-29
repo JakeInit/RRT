@@ -89,6 +89,7 @@ private:
   void setWalls();
   void placeRobotInMap();
   void setUpObjects();
+  void setUpUserObjects();
   bool newObstacleCollisionDetection(objectNode& newObject);
   void setConnectingNeighbor(node& leaf);
   bool connectToNeighborSegment(vector2f1& queryPt, uint64_t neighbor);
@@ -115,9 +116,12 @@ private:
   float robotBuffer_m;
 
   bool reachedGoalPoint;
+  bool userDefinedObjectsOn;
 
   uint64_t minNumberOfObjects;
   uint64_t numberOfObjects;
+
+  std::vector<std::vector<std::pair<float, float>>> userObjects;
 
   std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>  robotModel;
   std::vector<std::pair<std::shared_ptr<fcl::Boxf>, fcl::Transform3f>> objects;

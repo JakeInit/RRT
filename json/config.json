@@ -10,11 +10,26 @@
     "maxObjects": 6,
     "minObjects": 3,
     "maxObjectSize_m": 4.000,
-    "pathSmootherOn": false
+    "pathSmootherOn": false,
+    "UserDefinedObjectsOn": false
   },
   "robot": {
     "width_m": 0.300,
     "height_m": 0.300,
     "buffer_m": 0.100
+  },
+  "objects": {
+    "object_1": [
+      [-2, -2],
+      [-2, 2],
+      [2, -2],
+      [2, 2]
+    ],
+    "object_2": [
+      [-3, -3],
+      [-2.5, -2.5],
+      [-2.5, -3],
+      [-3, -2.5]
+    ]
   }
 }
