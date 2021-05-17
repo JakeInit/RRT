@@ -45,6 +45,7 @@ objectNode::objectNode() {
 // Constructor
 rapidRandomTree::rapidRandomTree(const std::string& treeName_, rapidRandomTree* otherTree, bool goalTree_) {
   treeName = treeName_;
+  goalTree = goalTree_;
 
   configReader = rrt::system::jsonParser::getInstance();
   userDefinedObjectsOn = configReader->parametersForSystem.UserDefinedObjectsOn;
@@ -102,7 +103,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, rapidRandomTree* 
 
   tree.clear();
   auto newNode = createNode(startPt);
-  if(goalTree_) {
+  if(goalTree) {
     newNode.goalNode = true;
   }
   tree.emplace_back(newNode);
@@ -172,16 +173,7 @@ void rapidRandomTree::growTreeTowardsRandom() {
   }
 
   newPoint = pointToKeep;
-
-  // Set node of neighbor for access
-  setConnectingNeighbor(tree.at(neighbor));           // graph will use neighbor location as vertex
-  // Make nearest neighbor point to new node.
-  tree.at(neighbor).neighbors.emplace_back(tree.size()); // Id of new node being placed in tree
-  // Add new point to tree
-  tree.emplace_back(createNode(newPoint));
-  // Parent of new node is nearest neighbor
-  tree.back().parent = neighbor;
-  lastNodeCoordinate = newPoint;                        // last point added to tree, other vertex in graph
+  addNodeToTree(newPoint, neighbor);
 }
 
 void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
@@ -259,19 +251,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
     return;                     // return without adding new point to tree
   }
   newPoint = pointToKeep;
-
-  // Store neighbor connecting to new point
-  setConnectingNeighbor(tree.at(neighbor));   // On Graph will connect new point to this neighbor node
-  lastNodeCoordinate = newPoint;                 // point of the neighbor node being connected to new point
-
-  // Parent of neighbor is the new node
-  tree.at(neighbor).parent = tree.size();
-  // Add new point to tree
-  tree.emplace_back(createNode(newPoint));
-  // Make new node point to the nearest neighbor.
-  // This will allow the start tree to point to the connecting node
-  //  in the goal tree and then find the goal point
-  tree.back().neighbors.emplace_back(neighbor);
+  addNodeToTree(pointToKeep, neighbor);
 }
 
 node rapidRandomTree::createNode(vector2f1 newPt) {
@@ -855,6 +835,27 @@ bool rapidRandomTree::tooCloseToExistingNode(vector2f1& queryPt, float minDistan
     }
   }
   return false;
+}
+
+void rapidRandomTree::addNodeToTree(const vector2f1& newPt, int neighbor) {
+  setConnectingNeighbor(tree.at(neighbor));
+  lastNodeCoordinate = newPt;
+
+  if(goalTree) {
+    // Parent of neighbor is the new node
+    tree.at(neighbor).parent = tree.size();
+    // Add new point to tree
+    tree.emplace_back(createNode(newPt));
+    // Make new node point to the nearest neighbor.
+    tree.back().neighbors.emplace_back(neighbor);
+  } else {
+    // Parent of new node is nearest neighbor
+    tree.back().parent = neighbor;
+    // Make nearest neighbor point to new node.
+    tree.at(neighbor).neighbors.emplace_back(tree.size());  // Id of new node being placed in tree
+    // Add new point to tree
+    tree.emplace_back(createNode(newPt));
+  }
 }
 
 } // end namespace rrt

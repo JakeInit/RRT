@@ -72,6 +72,7 @@ public:
 
   // Get functions of object class variables that are read only
   bool goalReached() const {return reachedGoalPoint;}
+  bool isGoalTree() const {return goalTree;}
   vector2f1 getCoordinateOfLastNode() const {return lastNodeCoordinate;}
   vector2f1 getTreeStart();
   std::vector<node> getTree() const {return tree;}
@@ -85,6 +86,7 @@ public:
 
 private:
   node createNode(vector2f1 newPt);
+  void addNodeToTree(const vector2f1& newPt, int neighbor);
   void setUpRobotModel();
   void setWalls();
   void placeRobotInMap();
@@ -119,6 +121,7 @@ private:
 
   bool reachedGoalPoint;
   bool userDefinedObjectsOn;
+  bool goalTree;
 
   uint64_t minNumberOfObjects;
   uint64_t numberOfObjects;

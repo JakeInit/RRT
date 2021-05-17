@@ -26,6 +26,9 @@ std::unique_ptr<rrt::rapidRandomTree> qInit = nullptr;
 std::unique_ptr<rrt::rapidRandomTree> qGoal = nullptr;
 std::unique_ptr<sf::RenderWindow> window = nullptr;
 
+rrt::rapidRandomTree* randomGrower;       // used to easily swap trees for growing
+rrt::rapidRandomTree* controlledGrower;
+
 void watchWindow();
 void updateWindow(rrt::vector2f1 pt1, rrt::vector2f1 pt2, sf::Color color);
 
@@ -33,6 +36,9 @@ int main(int argc, char** argv) {
   rrt::system::timerEvent timer;
   initialize();
   std::cout << "Entering the Running Loop" << std::endl;
+
+  randomGrower = qInit.get();
+  controlledGrower = qGoal.get();
   while(running) {
     if(timer.timerDone()) {
       timer.runNonBlockingTimer_ms(std::floor(loopTime_ms));
@@ -41,23 +47,27 @@ int main(int argc, char** argv) {
       continue;
     }
 
-    if(!qGoal->goalReached()) {                                                 // Grow the trees until they connect
-      // Grow the starting tree
-//      qInit->setOtherTree(qGoal->getTree());                                    // Pass goal tree to start
-      qInit->growTreeTowardsRandom();
-      rrt::vector2f1 newStartTreePoint = qInit->getCoordinateOfLastNode();      // newStartTree point is newest point
-      rrt::vector2f1 neighborNode = qInit->getConnectingNeighbor().location_m;  // location of last neighbor
-      updateWindow(newStartTreePoint, neighborNode, sf::Color::Red);            // Connect the 2 points
+    // Grow the trees until they connect
+    if(!controlledGrower->goalReached()) {
+      randomGrower->growTreeTowardsRandom();
+      rrt::vector2f1 newTreePoint = randomGrower->getCoordinateOfLastNode();
+      rrt::vector2f1 neighborNode = randomGrower->getConnectingNeighbor().location_m; // location of last neighbor
+      updateWindow(newTreePoint, neighborNode, sf::Color::Red);                       // Connect the 2 points
 
-      // Grow the goal tree
-      qGoal->growTreeTowardsPoint(newStartTreePoint);
-      if (!qGoal->goalReached()) {
-        rrt::vector2f1 lastPoint = qGoal->getCoordinateOfLastNode();  // location of newest point in tree
-        neighborNode = qGoal->getConnectingNeighbor().location_m;     // location of last neighbor
-        updateWindow(lastPoint, neighborNode, sf::Color::Red);        // Connect the 2 points
+      // Grow tree towards other tree
+      controlledGrower->growTreeTowardsPoint(newTreePoint);
+      if (!controlledGrower->goalReached()) {
+        rrt::vector2f1 lastPoint = controlledGrower->getCoordinateOfLastNode();  // location of newest point in tree
+        neighborNode = controlledGrower->getConnectingNeighbor().location_m;     // location of last neighbor
+        updateWindow(lastPoint, neighborNode, sf::Color::Red);                  // Connect the 2 points
         incrementCounter();
+
+        // Swap the trees
+        auto temp = randomGrower;
+        randomGrower = controlledGrower;
+        controlledGrower = temp;
       } else {                                                        // new point from start connects to goal
-        updateWindow(newStartTreePoint, qGoal->getConnectingNeighbor().location_m, sf::Color::Red);
+        updateWindow(newTreePoint, controlledGrower->getConnectingNeighbor().location_m, sf::Color::Red);
       }
     } else if (pathMap.empty()) {                                     // merge the two RRTs
       mergeTrees();
@@ -349,7 +359,7 @@ void mainspace::mergeTrees() {
   //  4.) add the connect node of the goal tree to the last point created in the start tree in the neighbors list
   auto startTree = qInit->getTree();
   auto goalTree = qGoal->getTree();
-  auto connectingGoalNode = qGoal->getConnectingNeighbor();
+  auto connectingGoalNode = controlledGrower->getConnectingNeighbor();
 
   for(auto& it : goalTree) {          // Iterate through each node in the goal tree
     it.id += startTree.size();
@@ -358,11 +368,15 @@ void mainspace::mergeTrees() {
     }
   }
 
-  connectingGoalNode.id += startTree.size();
-  std::cout << "Connecting node id = " << connectingGoalNode.id << std::endl;
+  if(controlledGrower->isGoalTree()) {
+    connectingGoalNode.id += startTree.size();
+    std::cout << "Connecting node id = " << connectingGoalNode.id << std::endl;
 
-  // Last node of start tree should point towards the connecting goal node
-  startTree.back().neighbors.emplace_back(connectingGoalNode.id);
+    // Last node of start tree should point towards the connecting goal node
+    startTree.back().neighbors.emplace_back(connectingGoalNode.id);
+  } else {
+    startTree.at(connectingGoalNode.id).neighbors.emplace_back(goalTree.back().id);
+  }
 
   // Create the map of possible paths for the robot in the environment
   pathMap = startTree;
