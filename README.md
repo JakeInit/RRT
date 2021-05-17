@@ -1,30 +1,27 @@
 **BiDirectional RRT**
 
 ## Description
-*C++ module that explores a given environment area creating trees expanding towards 
+*C++ module that explores a given environment area creating rapidly exploring random trees expanding towards 
 each other and then determining a path to take while avoiding obstacles. This algorithm
-is used for a 2d environment. The robot is considered differential driven with wheel centered.
-Therefore for determining the route, the robot will be treated as holonomic since it can turn 
-in place to align with the next goal point and drive straight even though it is a non-holonomic 
-vehical*
+is used for a 2d environment. For determining the route, the robot will be treated as holonomic.*
 
 ---
 
 Random Object placement with no Optimizations example 1: <br />
 
-![fullPath](https://user-images.githubusercontent.com/58401719/116438371-601d0f80-a81c-11eb-838d-624ae844e58a.gif)
+![random](https://user-images.githubusercontent.com/58401719/118504641-ae298280-b6f9-11eb-89cf-1f0cad63d368.gif)
 
-Random Object placement with no Optimizations example 2: <br />
+User Defined Object placement: <br />
 
-![fullPath2](https://user-images.githubusercontent.com/58401719/116594273-071eab80-a8f0-11eb-8540-d79ca1d1846f.gif)
+![userDefined](https://user-images.githubusercontent.com/58401719/118504709-c1d4e900-b6f9-11eb-811c-da6ef0e3c39d.gif)
 
 User Defined Object placement with path Optimizations: <br />
 
-![UserDefined_PathOpitmized](https://user-images.githubusercontent.com/58401719/116594423-2ddce200-a8f0-11eb-8dbc-c11e2fb44425.gif)
+![userDefined_Optimized](https://user-images.githubusercontent.com/58401719/118504812-d9ac6d00-b6f9-11eb-9cb0-3a4c4f65b715.gif)
 
 Random Object placement with path Optimizations: <br />
 
-![pathOptimized](https://user-images.githubusercontent.com/58401719/116594592-64b2f800-a8f0-11eb-93c0-cf884f9d35c4.gif)
+![randomOptimized](https://user-images.githubusercontent.com/58401719/118504875-e6c95c00-b6f9-11eb-845f-d78bb7004bec.gif)
 
 ## Cloning the repo
 
