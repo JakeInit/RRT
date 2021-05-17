@@ -30,6 +30,7 @@ public:
     bool UserDefinedObjectsOn;
     float loop_frequency_Hz;
     float stepDistance_m;
+    float minStepDistance_m;
     float boundaryHeight_m;
     float boundaryWidth_m;
     float maxObjectSize_m;

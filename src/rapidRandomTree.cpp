@@ -49,6 +49,7 @@ rapidRandomTree::rapidRandomTree(const std::string& treeName_, rapidRandomTree* 
   configReader = rrt::system::jsonParser::getInstance();
   userDefinedObjectsOn = configReader->parametersForSystem.UserDefinedObjectsOn;
   maxStepDistance_m = configReader->parametersForSystem.stepDistance_m;
+  minStepDistance_m = configReader->parametersForSystem.minStepDistance_m;
   boundaryWidth_m = configReader->parametersForSystem.boundaryWidth_m;
   boundaryHeight_m = configReader->parametersForSystem.boundaryHeight_m;
   maxObjectSize_m = configReader->parametersForSystem.maxObjectSize_m;
@@ -249,7 +250,7 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
       robotoCollision = collisionDetection(newPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
     }
 
-    if(!robotoCollision) {
+    if(!robotoCollision && !tooCloseToExistingNode(newPoint, minStepDistance_m)) {
       break;                     // Found point, exit for loop
     }
   } // end for loop
@@ -844,6 +845,16 @@ bool rapidRandomTree::lineIntersection(vector2f1 &intersectPt, vector2f1 A, vect
   intersectPt = projectToPointOnLine(temp, B, dist/2);
 
   return true;
+}
+
+bool rapidRandomTree::tooCloseToExistingNode(vector2f1& queryPt, float minDistance) {
+  for (const auto& it : tree) {
+    auto nodeDistance = distance(queryPt, it.location_m);
+    if(nodeDistance < minDistance) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } // end namespace rrt

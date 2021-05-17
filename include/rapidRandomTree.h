@@ -93,6 +93,7 @@ private:
   bool newObstacleCollisionDetection(objectNode& newObject);
   void setConnectingNeighbor(node& leaf);
   bool connectToNeighborSegment(vector2f1& queryPt, uint64_t neighbor);
+  bool tooCloseToExistingNode(vector2f1& queryPt, float minDistance);
   vector2f1 connectToOtherTree(vector2f1& point, uint64_t thisNeighbor);
 
   node connectingNeighbor;
@@ -108,6 +109,7 @@ private:
   std::vector<objectNode> objectInMap;
 
   float maxStepDistance_m;
+  float minStepDistance_m;
   float boundaryWidth_m;
   float boundaryHeight_m;
   float maxObjectSize_m;

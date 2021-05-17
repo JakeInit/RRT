@@ -67,6 +67,7 @@ void jsonParser::parseConfigValues() {
   parametersForSystem.UserDefinedObjectsOn = parameters["system"]["UserDefinedObjectsOn"].asBool();
   parametersForSystem.loop_frequency_Hz = parameters["system"]["loop_frequency_Hz"].asFloat();
   parametersForSystem.stepDistance_m = parameters["system"]["stepDistance_m"].asFloat();
+  parametersForSystem.minStepDistance_m = parameters["system"]["minStepDistance_m"].asFloat();
   parametersForSystem.boundaryHeight_m = parameters["system"]["boundaryHeight_m"].asFloat();
   parametersForSystem.boundaryWidth_m = parameters["system"]["boundaryWidth_m"].asFloat();
   parametersForSystem.maxObjectSize_m = parameters["system"]["maxObjectSize_m"].asFloat();
@@ -112,8 +113,10 @@ jsonParser::robotConfiguration::robotConfiguration() {
 
 jsonParser::systemConfiguration::systemConfiguration() {
   pathSmootherOn = false;
+  UserDefinedObjectsOn = false;
   loop_frequency_Hz = 0;
   stepDistance_m = 0;
+  minStepDistance_m = 0;
   boundaryHeight_m = 0;
   boundaryWidth_m = 0;
   maxNodes = 0;
