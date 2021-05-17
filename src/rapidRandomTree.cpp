@@ -17,6 +17,9 @@
 #include "jsonParser.h"
 #include "timerEvent.h"
 
+#define DEGTORAD(x) x*M_PI/180.0
+#define RADTODEG(x) x*180.0/M_PI
+
 namespace rrt {
 
 using namespace fcl;
@@ -191,12 +194,14 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
     return;
   }
 
+  auto neighborPoint = tree.at(neighbor).location_m;
+
   // Get distance from setPt to nearest neighbor
   // setPt does not get added to tree here. That is done outside the class since it already exist in the other tree
-  auto distanceToNeighbor = distance(setPt, tree.at(neighbor).location_m);
+  auto distanceToNeighbor = distance(setPt, neighborPoint);
   if(distanceToNeighbor <= maxStepDistance_m) {
     setConnectingNeighbor(tree.at(neighbor));           // Can be used to connect last start tree point to this neighbor
-    lastNodeCoordinate = tree.at(neighbor).location_m;    // The neighbor coordinate to connect to
+    lastNodeCoordinate = neighborPoint;                   // The neighbor coordinate to connect to
     reachedGoalPoint = true;
     std::cout << "connected to neighbor node"<< std::endl;
     return;
@@ -204,38 +209,55 @@ void rapidRandomTree::growTreeTowardsPoint(vector2f1& setPt) {
 
   // Grow tree from closest neighbor towards point by distance epsilon
   newPoint = projectToPointOnLine(tree.at(neighbor).location_m, setPt, maxStepDistance_m);
+  auto newPointDistance = distance(newPoint, neighborPoint);
+  auto dx = newPoint.x() - neighborPoint.x();
+  auto dy = newPoint.y() - neighborPoint.y();
+  auto newPointAngle_rad = atan2(dy, dx);
 
-  bool robotoCollision = true;
-  // Verify no collision from neighbor location to new point location
-  float robotRadius = robotWidth_m;
-  if(robotHeight_m < robotWidth_m) {
-    robotRadius = robotHeight_m;
-  }
-  int numSteps = (int) (maxStepDistance_m/robotRadius);
-  if(numSteps > 1) {
-    for (int i = numSteps; i > 0; i--) {
-      float distance = maxStepDistance_m * ((float) i);
-      distance /= (float) numSteps;
-      auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
-
-      // Check if robot will collide at subpoint
-      if (!collisionDetection(subPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform())) {
-        pointToKeep = subPoint;
-        robotoCollision = false;
-      } else {
-        break;    // Will use last point to Keep, or may not be able to extend tree if robotCollision is true
-      }
+  bool robotoCollision;
+  for(int angle_deg = 0; angle_deg <= 270; angle_deg+=90) {
+    newPoint.x() = newPointDistance*cos(newPointAngle_rad + DEGTORAD(angle_deg)) + neighborPoint.x();
+    newPoint.y() = newPointDistance*sin(newPointAngle_rad + DEGTORAD(angle_deg)) + neighborPoint.y();
+    if(angle_deg == 90) {
+      angle_deg += 90;      // This will make the final angle 270
     }
-  } else {
-    pointToKeep = newPoint;
-    robotoCollision = collisionDetection(newPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
-  }
+
+    robotoCollision = true;
+    // Verify no collision from neighbor location to new point location
+    float robotRadius = robotWidth_m;
+    if(robotHeight_m < robotWidth_m) {
+      robotRadius = robotHeight_m;
+    }
+
+    int numSteps = (int) (maxStepDistance_m/robotRadius);
+    if(numSteps > 1) {
+      for (int i = numSteps; i > 0; i--) {
+        float distance = maxStepDistance_m * ((float) i);
+        distance /= (float) numSteps;
+        auto subPoint = projectToPointOnLine(tree.at(neighbor).location_m, newPoint, distance);
+
+        // Check if robot will collide at subpoint
+        if (!collisionDetection(subPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform())) {
+          pointToKeep = subPoint;
+          robotoCollision = false;
+        } else {
+          break;    // Will use last point to Keep, or may not be able to extend tree if robotCollision is true
+        }
+      } // end loop through steps
+    } else {
+      pointToKeep = newPoint;
+      robotoCollision = collisionDetection(newPoint, getRobotAndTransform(), getObjectAndTransform(), getWallsAndTransform());
+    }
+
+    if(!robotoCollision) {
+      break;                     // Found point, exit for loop
+    }
+  } // end for loop
 
   if(robotoCollision) {
     return;                     // return without adding new point to tree
   }
   newPoint = pointToKeep;
-
 
   // Store neighbor connecting to new point
   setConnectingNeighbor(tree.at(neighbor));   // On Graph will connect new point to this neighbor node

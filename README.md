@@ -106,6 +106,9 @@ make install <br />
 	cd ..
 	./bin/rrtApplication
 	
+	note: make can be run from the main repo directory. This will run cmake and make. <br />
+	Then just run ./bin/rrtApplication
+	
 ---
 
 ## Configurations Parameters Found in Json
