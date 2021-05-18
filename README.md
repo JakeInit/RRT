@@ -9,19 +9,19 @@ is used for a 2d environment. For determining the route, the robot will be treat
 
 Random Object placement with no Optimizations example 1: <br />
 
-![random_notOptimized](https://user-images.githubusercontent.com/58401719/118538965-d8d90280-b71c-11eb-9436-13fe41d7fcaa.gif)
+![random_notOptimized](https://user-images.githubusercontent.com/58401719/118682571-93750d80-b7ce-11eb-9340-40504224e28d.gif)
 
 User Defined Object placement: <br />
 
-![userDefined_notOptimized](https://user-images.githubusercontent.com/58401719/118539099-032ac000-b71d-11eb-8b82-b4cd385083ac.gif)
+![userDefined_notOptimized](https://user-images.githubusercontent.com/58401719/118682626-9f60cf80-b7ce-11eb-8024-e11e98c52946.gif)
 
 User Defined Object placement with path Optimizations: <br />
 
-![userDefined_optimized](https://user-images.githubusercontent.com/58401719/118539129-0cb42800-b71d-11eb-900d-d8e57a29a722.gif)
+![userDefined_optimized](https://user-images.githubusercontent.com/58401719/118682641-a25bc000-b7ce-11eb-964c-9fcfb9b50416.gif)
 
 Random Object placement with path Optimizations: <br />
 
-![random_optimized](https://user-images.githubusercontent.com/58401719/118539169-19388080-b71d-11eb-8b77-5260b9c5defc.gif)
+![random_optimized](https://user-images.githubusercontent.com/58401719/118682603-9b34b200-b7ce-11eb-852c-54941eb9fc71.gif)
 
 ## Cloning the repo
 
